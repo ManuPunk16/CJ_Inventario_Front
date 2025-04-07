@@ -2,9 +2,10 @@ import { Component, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { AuthService } from './../../core/services/auth.service';
+import { AuthService } from '../../core/services/auth.service';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
+import { LoginRequest } from '../../core/models/auth.model';
 
 @Component({
   selector: 'app-login',
@@ -14,7 +15,7 @@ import { takeUntil } from 'rxjs/operators';
   styleUrls: ['./login.component.scss']
 })
 export class LoginComponent implements OnDestroy {
-  usuario = {
+  usuario: LoginRequest = {
     username: '',
     password: ''
   };
@@ -34,10 +35,6 @@ export class LoginComponent implements OnDestroy {
     this.destroy$.complete();
   }
 
-  togglePasswordVisibility(): void {
-    this.hidePassword = !this.hidePassword;
-  }
-
   login(): void {
     if (!this.usuario.username || !this.usuario.password) {
       this.errorMessage = 'Por favor, complete todos los campos';
@@ -51,8 +48,7 @@ export class LoginComponent implements OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response) => {
-          if (response && response.token) {
-            localStorage.setItem('token', response.token);
+          if (response.status === 'success' && response.token) {
             this.router.navigate(['/inventario']);
           } else {
             this.errorMessage = 'Error en la respuesta del servidor';
@@ -65,5 +61,9 @@ export class LoginComponent implements OnDestroy {
           this.isLoading = false;
         }
       });
+  }
+
+  togglePasswordVisibility(): void {
+    this.hidePassword = !this.hidePassword;
   }
 }

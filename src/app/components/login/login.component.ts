@@ -1,40 +1,69 @@
-import { AuthService } from './../../core/services/auth.service';
-import { Component } from '@angular/core';
+import { Component, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
-import { FormsModule } from '@angular/forms'; // Importa FormsModule
+import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { AuthService } from './../../core/services/auth.service';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [FormsModule, CommonModule], // Agrega FormsModule a los imports
+  imports: [FormsModule, CommonModule],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss']
 })
-export class LoginComponent {
+export class LoginComponent implements OnDestroy {
   usuario = {
     username: '',
     password: ''
   };
-  errorMessage: string = ''; // Variable para almacenar el mensaje de error
 
-  constructor(private authService: AuthService, private router: Router) { }
+  errorMessage: string = '';
+  isLoading: boolean = false;
+  hidePassword: boolean = true;
+  private destroy$ = new Subject<void>();
+
+  constructor(
+    private authService: AuthService,
+    private router: Router
+  ) {}
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  togglePasswordVisibility(): void {
+    this.hidePassword = !this.hidePassword;
+  }
 
   login(): void {
-    this.authService.login(this.usuario).subscribe({
-      next: (response) => {
-        console.log('Respuesta del backend:', response);
-        if (response && response.token) { // Verificar que la respuesta y el token existan
-          localStorage.setItem('token', response.token); // Almacenar el token en el localStorage
-          this.router.navigate(['/inventario']);
-        } else {
-          this.errorMessage = 'Credenciales inválidas. Por favor, inténtalo de nuevo.';
+    if (!this.usuario.username || !this.usuario.password) {
+      this.errorMessage = 'Por favor, complete todos los campos';
+      return;
+    }
+
+    this.isLoading = true;
+    this.errorMessage = '';
+
+    this.authService.login(this.usuario)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          if (response && response.token) {
+            localStorage.setItem('token', response.token);
+            this.router.navigate(['/inventario']);
+          } else {
+            this.errorMessage = 'Error en la respuesta del servidor';
+          }
+          this.isLoading = false;
+        },
+        error: (error) => {
+          console.error('Error al iniciar sesión:', error);
+          this.errorMessage = error.error?.message || 'Error al iniciar sesión. Por favor, inténtelo de nuevo.';
+          this.isLoading = false;
         }
-      },
-      error: (error) => {
-        console.error('Error al iniciar sesión:', error);
-        this.errorMessage = 'Ocurrió un error al iniciar sesión. Por favor, inténtalo de nuevo más tarde.'; // Mensaje de error genérico
-      }
-    });
+      });
   }
 }

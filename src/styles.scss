@@ -1,1 +1,35 @@
 @use "tailwindcss";
+
+:root {
+  --primary-100: #bf2147;
+  --primary-500: #9F2241;
+  --primary-900: #691C32;
+
+  --secondary-100: #BCA986;
+  --secondary-500: #AB9470;
+  --secondary-900: #235B4E;
+
+  --accent-500: #235B4E;
+
+  --gray-100: #ECF0F1;
+  --gray-500: #888B8D;
+  --gray-900: #53565A;
+
+  --custom-white: #F8F8F8;
+}
+
+:host {
+  display: block;
+  height: 100%;
+
+  ::ng-deep body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+}
+
+.h-screen {
+  height: 100vh;
+  overflow-y: auto;
+}

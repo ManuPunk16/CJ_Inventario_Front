@@ -1,15 +1,69 @@
-import { Component } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Component, OnInit, ElementRef, ViewChild, HostListener } from '@angular/core';
+import { RouterOutlet, Router, RouterLink } from '@angular/router';
+import { AuthService } from './core/services/auth.service';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-root',
-  imports: [
-    RouterOutlet
-  ],
   standalone: true,
+  imports: [
+    RouterOutlet,
+    CommonModule,
+    RouterLink
+  ],
   templateUrl: './app.component.html',
-  styleUrl: './app.component.scss'
+  styleUrls: ['./app.component.scss']
 })
-export class AppComponent {
-  title = 'CJ_Inventario_Front';
+export class AppComponent implements OnInit {
+  @ViewChild('profileDropdown') profileDropdown?: ElementRef;
+  @ViewChild('profileButton') profileButton?: ElementRef;
+
+  isMobileMenuOpen = false;
+  isProfileDropdownOpen = false;
+
+  constructor(
+    private authService: AuthService,
+    private router: Router
+  ) {}
+
+  ngOnInit(): void {
+    if (!this.authService.isAuthenticated()) {
+      this.router.navigate(['/login']);
+    }
+  }
+
+  get isLoggedIn(): boolean {
+    return this.authService.isAuthenticated();
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent) {
+    // Verificar si el clic fue fuera del menú dropdown y del botón
+    if (this.isProfileDropdownOpen) {
+      const targetElement = event.target as HTMLElement;
+
+      // Verificar si el clic fue dentro del menú o del botón
+      const clickedInside =
+        this.profileDropdown?.nativeElement.contains(targetElement) ||
+        this.profileButton?.nativeElement.contains(targetElement);
+
+      if (!clickedInside) {
+        this.isProfileDropdownOpen = false;
+      }
+    }
+  }
+
+  toggleMobileMenu(): void {
+    this.isMobileMenuOpen = !this.isMobileMenuOpen;
+  }
+
+  toggleProfileDropdown(): void {
+    this.isProfileDropdownOpen = !this.isProfileDropdownOpen;
+  }
+
+  logout(): void {
+    this.authService.logout();
+    this.isProfileDropdownOpen = false;
+    this.router.navigate(['/login']);
+  }
 }

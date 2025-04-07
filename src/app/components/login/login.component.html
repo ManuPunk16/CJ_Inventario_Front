@@ -1,15 +1,93 @@
-<div class="container">
-  <h2>Iniciar Sesión</h2>
-  <form (ngSubmit)="login()">
-    <div class="form-group">
-      <label for="username">Usuario:</label>
-      <input type="text" id="username" name="username" [(ngModel)]="usuario.username" required>
+<div class="h-screen flex items-center justify-center bg-gray-50">
+  <div class="w-full max-w-md px-4 sm:px-6 lg:px-8">
+    <!-- Header -->
+    <div>
+      <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+        Iniciar Sesión
+      </h2>
     </div>
-    <div class="form-group">
-      <label for="password">Contraseña:</label>
-      <input type="password" id="password" name="password" [(ngModel)]="usuario.password" required>
-    </div>
-    <button type="submit">Iniciar Sesión</button>
-  </form>
-  <div *ngIf="errorMessage" class="error-message">{{ errorMessage }}</div>
+
+    <!-- Formulario -->
+    <form class="mt-8 space-y-6" (ngSubmit)="login()" #loginForm="ngForm">
+      <div class="rounded-md shadow-sm -space-y-px">
+        <!-- Usuario -->
+        <div>
+          <label for="username" class="sr-only">Usuario</label>
+          <input
+            id="username"
+            name="username"
+            type="text"
+            [(ngModel)]="usuario.username"
+            required
+            class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-[var(--primary-500)] focus:border-[var(--primary-500)] focus:z-10 sm:text-sm"
+            placeholder="Usuario"
+            [class.border-red-500]="username.invalid && (username.dirty || username.touched)"
+            #username="ngModel">
+          <div *ngIf="username.invalid && (username.dirty || username.touched)" class="text-red-500 text-xs mt-1">
+            <div *ngIf="username.errors?.['required']">El usuario es requerido</div>
+          </div>
+        </div>
+
+        <!-- Contraseña -->
+        <div>
+          <label for="password" class="sr-only">Contraseña</label>
+          <input
+            id="password"
+            name="password"
+            [type]="hidePassword ? 'password' : 'text'"
+            [(ngModel)]="usuario.password"
+            required
+            class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-[var(--primary-500)] focus:border-[var(--primary-500)] focus:z-10 sm:text-sm"
+            placeholder="Contraseña"
+            [class.border-red-500]="password.invalid && (password.dirty || password.touched)"
+            #password="ngModel">
+          <div *ngIf="password.invalid && (password.dirty || password.touched)" class="text-red-500 text-xs mt-1">
+            <div *ngIf="password.errors?.['required']">La contraseña es requerida</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Botón de mostrar/ocultar contraseña -->
+      <div class="flex items-center justify-end">
+        <button
+          type="button"
+          (click)="togglePasswordVisibility()"
+          class="text-sm text-[var(--primary-500)] hover:text-[var(--primary-100)]">
+          {{ hidePassword ? 'Mostrar' : 'Ocultar' }} contraseña
+        </button>
+      </div>
+
+      <!-- Botón de Submit -->
+      <div>
+        <button
+          type="submit"
+          [disabled]="!loginForm.form.valid || isLoading"
+          class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-[var(--secondary-500)] hover:bg-[var(--secondary-100)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
+          <span class="absolute left-0 inset-y-0 flex items-center pl-3">
+            <!-- Heroicon name: solid/lock-closed -->
+            <svg
+              class="h-5 w-5 text-[var(--primary-500)] group-hover:text-[var(--primary-100)]"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true">
+              <path
+                fill-rule="evenodd"
+                d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                clip-rule="evenodd" />
+            </svg>
+          </span>
+          {{ isLoading ? 'Iniciando sesión...' : 'Iniciar sesión' }}
+        </button>
+      </div>
+
+      <!-- Mensaje de Error -->
+      <div
+        *ngIf="errorMessage"
+        class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative"
+        role="alert">
+        <span class="block sm:inline">{{ errorMessage }}</span>
+      </div>
+    </form>
+  </div>
 </div>

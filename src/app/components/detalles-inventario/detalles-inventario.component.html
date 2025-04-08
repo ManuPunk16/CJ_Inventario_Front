@@ -1,0 +1,107 @@
+<div class="container mx-auto px-4 py-8">
+  <mat-card class="bg-white shadow-lg rounded-lg">
+    <mat-card-header class="flex justify-between items-center">
+      <mat-card-title class="text-xl font-bold">
+        Detalles del Artículo
+      </mat-card-title>
+      <button mat-icon-button color="primary" (click)="regresar()">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+    </mat-card-header>
+
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="py-8 text-center">
+      <mat-spinner diameter="40" class="mx-auto"></mat-spinner>
+      <p class="mt-4 text-gray-600">Cargando detalles...</p>
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="error" class="py-8 text-center">
+      <p class="text-red-600">{{error}}</p>
+    </div>
+
+    <!-- Content -->
+    <mat-card-content *ngIf="!isLoading && !error && item">
+      <!-- Información general -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div class="space-y-2">
+          <p><strong>Código:</strong> {{item.codigoUbicacion}}</p>
+          <p><strong>Tipo:</strong> {{item.tipoMaterial}}</p>
+          <p><strong>Nombre:</strong> {{item.nombre}}</p>
+          <p><strong>Cantidad:</strong> {{item.cantidad}}</p>
+        </div>
+        <div class="space-y-2">
+          <p><strong>Unidad:</strong> {{item.unidadMedida}}</p>
+          <p><strong>Stock Mínimo:</strong> {{item.stockMinimo}}</p>
+          <p><strong>Ubicación:</strong> Anaquel {{item.ubicacion.anaquel}} - Nivel {{item.ubicacion.nivel}}</p>
+        </div>
+      </div>
+
+      <!-- Tabs para entradas y salidas -->
+      <mat-tab-group>
+        <!-- Tab de Entradas -->
+        <mat-tab label="Entradas">
+          <div class="mt-4">
+            <table mat-table [dataSource]="item.entradas" class="w-full">
+              <ng-container matColumnDef="fecha">
+                <th mat-header-cell *matHeaderCellDef>Fecha</th>
+                <td mat-cell *matCellDef="let entrada">{{entrada.fecha | date:'dd/MM/yyyy'}}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="cantidad">
+                <th mat-header-cell *matHeaderCellDef>Cantidad</th>
+                <td mat-cell *matCellDef="let entrada">{{entrada.cantidad}}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="proveedor">
+                <th mat-header-cell *matHeaderCellDef>Proveedor</th>
+                <td mat-cell *matCellDef="let entrada">{{entrada.proveedor || '-'}}</td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="displayedColumnsEntradas"></tr>
+              <tr mat-row *matRowDef="let row; columns: displayedColumnsEntradas;"></tr>
+            </table>
+
+            <div *ngIf="item.entradas.length === 0" class="py-4 text-center text-gray-600">
+              No hay registros de entradas
+            </div>
+          </div>
+        </mat-tab>
+
+        <!-- Tab de Salidas -->
+        <mat-tab label="Salidas">
+          <div class="mt-4">
+            <table mat-table [dataSource]="item.salidas" class="w-full">
+              <ng-container matColumnDef="fecha">
+                <th mat-header-cell *matHeaderCellDef>Fecha</th>
+                <td mat-cell *matCellDef="let salida">{{salida.fecha | date:'dd/MM/yyyy'}}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="cantidad">
+                <th mat-header-cell *matHeaderCellDef>Cantidad</th>
+                <td mat-cell *matCellDef="let salida">{{salida.cantidad}}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="area">
+                <th mat-header-cell *matHeaderCellDef>Área</th>
+                <td mat-cell *matCellDef="let salida">{{salida.area}}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="solicitante">
+                <th mat-header-cell *matHeaderCellDef>Solicitante</th>
+                <td mat-cell *matCellDef="let salida">{{salida.solicitante}}</td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="displayedColumnsSalidas"></tr>
+              <tr mat-row *matRowDef="let row; columns: displayedColumnsSalidas;"></tr>
+            </table>
+
+            <div *ngIf="item.salidas.length === 0" class="py-4 text-center text-gray-600">
+              No hay registros de salidas
+            </div>
+          </div>
+        </mat-tab>
+      </mat-tab-group>
+    </mat-card-content>
+  </mat-card>
+</div>

@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { AuthGuard } from './core/auth.guard';
+import { DetallesInventarioComponent } from './components/detalles-inventario/detalles-inventario.component';
 
 export const routes: Routes = [
   {
@@ -14,6 +15,11 @@ export const routes: Routes = [
   {
     path: 'register',
     loadComponent: () => import('./components/register/register.component').then(m => m.RegisterComponent)
+  },
+  {
+    path: 'inventario/detalles/:id',
+    component: DetallesInventarioComponent,
+    canActivate: [AuthGuard]
   },
   {
     path: '**',

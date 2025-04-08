@@ -81,11 +81,15 @@ export interface ApiResponse<T> {
 }
 
 export interface InventarioResponse extends ApiResponse<Inventario> {
-  data: Inventario;
+  status: 'success' | 'error';
+  message?: string;
+  data?: Inventario; // Agregamos esta propiedad
 }
 
 export interface InventariosResponse extends ApiResponse<Inventario[]> {
-  data: Inventario[];
+  status: 'success' | 'error';
+  message?: string;
+  items: Inventario[]; // Cambiamos data por items para mantener consistencia
   totalItems?: number;
   page?: number;
   totalPages?: number;

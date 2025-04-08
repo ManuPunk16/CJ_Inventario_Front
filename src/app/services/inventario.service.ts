@@ -97,4 +97,12 @@ export class InventarioService {
       { headers }
     );
   }
+
+  getInventarioById(id: string): Observable<InventarioResponse> {
+    const token = localStorage.getItem('token');
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`,
+    });
+    return this.http.get<InventarioResponse>(`${this.apiUrl}/${id}`, { headers });
+  }
 }

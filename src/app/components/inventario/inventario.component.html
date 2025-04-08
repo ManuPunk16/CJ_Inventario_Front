@@ -46,13 +46,22 @@
                 class="text-[var(--secondary-500)] hover:text-[var(--secondary-700)]">
                 <mat-icon>edit</mat-icon>
               </button>
-              <!-- <button
+              <!-- Nuevo botón para entrada -->
+              <button
+                mat-icon-button
+                color="primary"
+                (click)="agregarEntrada(row)"
+                class="text-green-600 hover:text-green-800">
+                <mat-icon>add_circle</mat-icon>
+              </button>
+              <!-- Nuevo botón para salida -->
+              <button
                 mat-icon-button
                 color="warn"
-                (click)="eliminarItem(row._id)"
-                class="text-red-500 hover:text-red-700">
-                <mat-icon>delete</mat-icon>
-              </button> -->
+                (click)="agregarSalida(row)"
+                class="text-red-600 hover:text-red-800">
+                <mat-icon>remove_circle</mat-icon>
+              </button>
             </td>
           </ng-container>
 

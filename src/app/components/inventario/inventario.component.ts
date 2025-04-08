@@ -12,7 +12,7 @@ import { MatDialogModule } from '@angular/material/dialog';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Router } from '@angular/router';
 import { InventarioService } from '../../services/inventario.service';
-import { Inventario } from '../../core/models/inventario.model';
+import { Inventario, AreaTipo } from '../../core/models/inventario.model';
 import Swal from 'sweetalert2';
 import { AuthService } from '../../core/services/auth.service';
 
@@ -321,5 +321,208 @@ export class InventarioComponent implements OnInit {
         }
       });
     }
+  }
+
+  agregarEntrada(item: Inventario): void {
+    if (!this.authService.hasRole('admin')) {
+      Swal.fire({
+        title: 'Error',
+        text: 'No tienes permisos para realizar esta acción',
+        icon: 'error',
+        confirmButtonColor: 'var(--primary-500)'
+      });
+      return;
+    }
+
+    Swal.fire({
+      title: 'Agregar Entrada',
+      html: `
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700">
+              Cantidad <span class="text-red-500">*</span>
+            </label>
+            <input id="cantidad" type="number" min="1" class="mt-1 block w-full p-2 border rounded-md focus:border-[var(--primary-500)] focus:ring-[var(--primary-500)]">
+            <span id="cantidad-error" class="text-red-500 text-xs hidden">Campo requerido</span>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">
+              Proveedor
+            </label>
+            <input id="proveedor" type="text" class="mt-1 block w-full p-2 border rounded-md focus:border-[var(--primary-500)] focus:ring-[var(--primary-500)]">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Observaciones</label>
+            <textarea id="observaciones" class="mt-1 block w-full p-2 border rounded-md focus:border-[var(--primary-500)] focus:ring-[var(--primary-500)]"></textarea>
+          </div>
+        </div>
+      `,
+      showCancelButton: true,
+      confirmButtonText: 'Guardar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: 'var(--primary-500)',
+      cancelButtonColor: 'var(--gray-500)',
+      preConfirm: () => {
+        const cantidad = parseInt((document.getElementById('cantidad') as HTMLInputElement).value);
+        if (!cantidad || cantidad < 1) {
+          Swal.showValidationMessage('La cantidad debe ser mayor a 0');
+          return false;
+        }
+
+        return {
+          cantidad,
+          proveedor: (document.getElementById('proveedor') as HTMLInputElement).value.trim(),
+          observaciones: (document.getElementById('observaciones') as HTMLTextAreaElement).value.trim()
+        };
+      }
+    }).then((result) => {
+      if (result.isConfirmed && result.value) {
+        this.inventarioService.agregarEntrada(item._id!, result.value).subscribe({
+          next: (response) => {
+            if (response.status === 'success') {
+              Swal.fire({
+                title: '¡Éxito!',
+                text: 'Entrada registrada correctamente',
+                icon: 'success',
+                confirmButtonColor: 'var(--primary-500)'
+              });
+              this.cargarInventario();
+            }
+          },
+          error: (error) => {
+            Swal.fire({
+              title: 'Error',
+              text: error.error?.message || 'Error al registrar la entrada',
+              icon: 'error',
+              confirmButtonColor: 'var(--primary-500)'
+            });
+          }
+        });
+      }
+    });
+  }
+
+  agregarSalida(item: Inventario): void {
+    Swal.fire({
+      title: 'Agregar Salida',
+      html: `
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700">
+              Cantidad <span class="text-red-500">*</span>
+            </label>
+            <input id="cantidad" type="number" min="1" max="${item.cantidad}" class="mt-1 block w-full p-2 border rounded-md focus:border-[var(--primary-500)] focus:ring-[var(--primary-500)]">
+            <span id="cantidad-error" class="text-red-500 text-xs hidden">Campo requerido</span>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">
+              Área Solicitante <span class="text-red-500">*</span>
+            </label>
+            <select id="area" class="mt-1 block w-full p-2 border rounded-md focus:border-[var(--primary-500)] focus:ring-[var(--primary-500)]">
+              <option value="">Seleccione un área</option>
+              <option value="CONSEJERO JURÍDICO">CONSEJERO JURÍDICO</option>
+              <option value="SECRETARIA PARTICULAR Y DE COMUNICACIÓN SOCIAL">SECRETARIA PARTICULAR Y DE COMUNICACIÓN SOCIAL</option>
+              <option value="DIRECCIÓN DE COORDINACIÓN Y CONTROL DE GESTIÓN">DIRECCIÓN DE COORDINACIÓN Y CONTROL DE GESTIÓN</option>
+              <option value="DIRECCIÓN GENERAL DE LO CONTENCIOSO">DIRECCIÓN GENERAL DE LO CONTENCIOSO</option>
+              <option value="DIRECCIÓN DE ASISTENCIA TÉCNICA Y COMBATE A LA CORRUPCIÓN">DIRECCIÓN DE ASISTENCIA TÉCNICA Y COMBATE A LA CORRUPCIÓN</option>
+              <option value="DIRECCIÓN DE SERVICIOS LEGALES">DIRECCIÓN DE SERVICIOS LEGALES</option>
+              <option value="DIRECCIÓN GENERAL CONSULTIVA">DIRECCIÓN GENERAL CONSULTIVA</option>
+              <option value="DIRECCIÓN DE ESTUDIOS LEGISLATIVOS">DIRECCIÓN DE ESTUDIOS LEGISLATIVOS</option>
+              <option value="DIRECCIÓN DE ESTUDIOS JURÍDICOS">DIRECCIÓN DE ESTUDIOS JURÍDICOS</option>
+              <option value="DIRECCIÓN DE COMPILACIÓN NORMATIVA, ARCHIVO E IGUALDAD DE GÉNERO">DIRECCIÓN DE COMPILACIÓN NORMATIVA</option>
+              <option value="DIRECCIÓN ADMINISTRATIVA">DIRECCIÓN ADMINISTRATIVA</option>
+              <option value="UNIDAD DE TRANSPARENCIA">UNIDAD DE TRANSPARENCIA</option>
+            </select>
+            <span id="area-error" class="text-red-500 text-xs hidden">Campo requerido</span>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">
+              Solicitante <span class="text-red-500">*</span>
+            </label>
+            <input id="solicitante" type="text" class="mt-1 block w-full p-2 border rounded-md focus:border-[var(--primary-500)] focus:ring-[var(--primary-500)]">
+            <span id="solicitante-error" class="text-red-500 text-xs hidden">Campo requerido</span>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">
+              Entregado por <span class="text-red-500">*</span>
+            </label>
+            <input id="quienEntrega" type="text" class="mt-1 block w-full p-2 border rounded-md focus:border-[var(--primary-500)] focus:ring-[var(--primary-500)]">
+            <span id="quienEntrega-error" class="text-red-500 text-xs hidden">Campo requerido</span>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Motivo</label>
+            <textarea id="motivo" class="mt-1 block w-full p-2 border rounded-md focus:border-[var(--primary-500)] focus:ring-[var(--primary-500)]"></textarea>
+          </div>
+        </div>
+      `,
+      showCancelButton: true,
+      confirmButtonText: 'Guardar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: 'var(--primary-500)',
+      cancelButtonColor: 'var(--gray-500)',
+      preConfirm: () => {
+        const cantidad = parseInt((document.getElementById('cantidad') as HTMLInputElement).value);
+        const area = (document.getElementById('area') as HTMLSelectElement).value;
+        const solicitante = (document.getElementById('solicitante') as HTMLInputElement).value.trim();
+        const quienEntrega = (document.getElementById('quienEntrega') as HTMLInputElement).value.trim();
+        const motivo = (document.getElementById('motivo') as HTMLTextAreaElement).value.trim();
+
+        if (!cantidad || cantidad < 1 || cantidad > item.cantidad) {
+          Swal.showValidationMessage('Cantidad inválida');
+          return false;
+        }
+        if (!area) {
+          Swal.showValidationMessage('Debe seleccionar un área');
+          return false;
+        }
+        if (!solicitante) {
+          Swal.showValidationMessage('Debe indicar quien solicita');
+          return false;
+        }
+        if (!quienEntrega) {
+          Swal.showValidationMessage('Debe indicar quien entrega');
+          return false;
+        }
+        if (!motivo) {
+          Swal.showValidationMessage('El motivo es requerido');
+          return false;
+        }
+
+        return {
+          cantidad,
+          area,
+          solicitante,
+          quienEntrega,
+          motivo,
+          hora: new Date().toLocaleTimeString()
+        };
+      }
+    }).then((result) => {
+      if (result.isConfirmed && result.value) {
+        // console.log('Datos a enviar:', result.value);
+        this.inventarioService.agregarSalida(item._id!, result.value).subscribe({
+          next: (response) => {
+            if (response.status === 'success') {
+              Swal.fire({
+                title: '¡Éxito!',
+                text: 'Salida registrada correctamente',
+                icon: 'success',
+                confirmButtonColor: 'var(--primary-500)'
+              });
+              this.cargarInventario();
+            }
+          },
+          error: (error) => {
+            // console.error('Error detallado:', error);
+            Swal.fire({
+              title: 'Error',
+              text: error.error?.message || 'Error al registrar la salida',
+              icon: 'error',
+              confirmButtonColor: 'var(--primary-500)'
+            });
+          }
+        });
+      }
+    });
   }
 }

@@ -3,6 +3,9 @@ import { RouterOutlet, Router, RouterLink } from '@angular/router';
 import { AuthService } from './core/services/auth.service';
 import { CommonModule } from '@angular/common';
 import { InactivityService } from './core/services/inactivity.service';
+import { User } from './core/models/auth.model';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-root',
@@ -21,6 +24,8 @@ export class AppComponent implements OnInit, OnDestroy {
 
   isMobileMenuOpen = false;
   isProfileDropdownOpen = false;
+  currentUser: User | null = null;
+  private destroy$ = new Subject<void>();
 
   constructor(
     private authService: AuthService,
@@ -33,10 +38,17 @@ export class AppComponent implements OnInit, OnDestroy {
       this.router.navigate(['/login']);
     }
     this.inactivityService.startWatching();
+    this.authService.getCurrentUser()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(user => {
+        this.currentUser = user;
+      });
   }
 
   ngOnDestroy(): void {
     this.inactivityService.stopWatching();
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   get isLoggedIn(): boolean {

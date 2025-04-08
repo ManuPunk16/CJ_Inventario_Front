@@ -1,7 +1,7 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
-import { MatPaginatorModule, MatPaginator } from '@angular/material/paginator';
+import { MatPaginatorModule, MatPaginator, PageEvent } from '@angular/material/paginator';
 import { MatSortModule, MatSort } from '@angular/material/sort';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -50,6 +50,11 @@ export class InventarioComponent implements OnInit {
   isLoading = true;
   errorMessage = '';
 
+  totalItems = 0;
+  pageSize = 25;
+  pageSizeOptions: number[] = [5, 10, 25, 50, 100];
+  currentPage = 0;
+
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
 
@@ -64,16 +69,23 @@ export class InventarioComponent implements OnInit {
   }
 
   ngAfterViewInit() {
-    this.dataSource.paginator = this.paginator;
+    // En lugar de asignar el paginador directamente, nos suscribimos a sus eventos
+    this.paginator.page.subscribe((pageEvent: PageEvent) => {
+      this.pageSize = pageEvent.pageSize;
+      this.currentPage = pageEvent.pageIndex;
+      this.cargarInventario(this.currentPage, this.pageSize);
+    });
+
     this.dataSource.sort = this.sort;
   }
 
-  cargarInventario(): void {
+  cargarInventario(page: number = 0, pageSize: number = this.pageSize): void {
     this.isLoading = true;
-    this.inventarioService.getInventario().subscribe({
+    this.inventarioService.getInventario(page, pageSize).subscribe({
       next: (response) => {
-        if (response.status === 'success' && response.data) {
-          this.dataSource.data = response.data;
+        if (response.status === 'success') {
+          this.dataSource.data = response.items;
+          this.totalItems = response.totalItems || 0;
           this.isLoading = false;
         }
       },
@@ -83,6 +95,12 @@ export class InventarioComponent implements OnInit {
         console.error('Error:', error);
       }
     });
+  }
+
+  onPageChange(event: any): void {
+    this.currentPage = event.pageIndex;
+    this.pageSize = event.pageSize;
+    this.cargarInventario();
   }
 
   aplicarFiltro(event: Event) {
@@ -382,10 +400,11 @@ export class InventarioComponent implements OnInit {
         valores['stockMinimo'] = parseInt((document.getElementById('stockMinimo') as HTMLInputElement).value) || 0;
         valores['observaciones'] = (document.getElementById('observaciones') as HTMLTextAreaElement).value.trim();
 
-        // Generar el código de ubicación
+        // Modificamos la generación del código de ubicación para incluir más información
         const anaquel = valores['anaquel'].toUpperCase();
         const nivel = valores['nivel'];
-        valores['codigoUbicacion'] = `${anaquel}-N${nivel}`;
+        const shortTimestamp = Date.now().toString().slice(-4);
+        valores['codigoUbicacion'] = `A${anaquel}-N${nivel}-${shortTimestamp}`;
 
         // Crear el objeto de ubicación
         valores['ubicacion'] = {
@@ -522,8 +541,13 @@ export class InventarioComponent implements OnInit {
   }
 
   agregarSalida(item: Inventario): void {
-    Swal.fire({
-      title: 'Agregar Salida',
+    let usuarioActual: string = 'Usuario Desconocido';
+    this.authService.getCurrentUser().subscribe(user => {
+      usuarioActual = user?.username || 'Usuario Desconocido';
+    });
+
+      Swal.fire({
+        title: 'Agregar Salida',
       html: `
         <div class="space-y-4">
           <div>
@@ -565,8 +589,13 @@ export class InventarioComponent implements OnInit {
             <label class="block text-sm font-medium text-gray-700">
               Entregado por <span class="text-red-500">*</span>
             </label>
-            <input id="quienEntrega" type="text" class="mt-1 block w-full p-2 border rounded-md focus:border-[var(--primary-500)] focus:ring-[var(--primary-500)]">
-            <span id="quienEntrega-error" class="text-red-500 text-xs hidden">Campo requerido</span>
+            <input
+              id="quienEntrega"
+              type="text"
+              value="${usuarioActual}"
+              readonly
+              class="mt-1 block w-full p-2 border rounded-md bg-gray-100 cursor-not-allowed"
+            >
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700">Motivo</label>
@@ -583,7 +612,6 @@ export class InventarioComponent implements OnInit {
         const cantidad = parseInt((document.getElementById('cantidad') as HTMLInputElement).value);
         const area = (document.getElementById('area') as HTMLSelectElement).value;
         const solicitante = (document.getElementById('solicitante') as HTMLInputElement).value.trim();
-        const quienEntrega = (document.getElementById('quienEntrega') as HTMLInputElement).value.trim();
         const motivo = (document.getElementById('motivo') as HTMLTextAreaElement).value.trim();
 
         if (!cantidad || cantidad < 1 || cantidad > item.cantidad) {
@@ -598,10 +626,6 @@ export class InventarioComponent implements OnInit {
           Swal.showValidationMessage('Debe indicar quien solicita');
           return false;
         }
-        if (!quienEntrega) {
-          Swal.showValidationMessage('Debe indicar quien entrega');
-          return false;
-        }
         if (!motivo) {
           Swal.showValidationMessage('El motivo es requerido');
           return false;
@@ -611,7 +635,7 @@ export class InventarioComponent implements OnInit {
           cantidad,
           area,
           solicitante,
-          quienEntrega,
+          quienEntrega: usuarioActual, // Usamos el usuario actual directamente
           motivo,
           hora: new Date().toLocaleTimeString()
         };

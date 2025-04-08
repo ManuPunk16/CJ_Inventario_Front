@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, BehaviorSubject, throwError } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
 import { environment } from '../../../environments/environments';
@@ -52,8 +52,9 @@ export class AuthService {
     }
   }
 
-  register(userData: RegisterRequest): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.apiUrl}/register`, userData);
+  register(usuario: RegisterRequest): Observable<AuthResponse> {
+    const headers = new HttpHeaders().set('Authorization', `Bearer ${this.getToken()}`);
+    return this.http.post<AuthResponse>(`${this.apiUrl}/register`, usuario, { headers });
   }
 
   logout(): void {
@@ -66,13 +67,18 @@ export class AuthService {
     return !!localStorage.getItem('token');
   }
 
-  getCurrentUser(): User | null {
-    return this.userSubject.value;
+  getCurrentUser(): Observable<User | null> {
+    return this.user$;
   }
 
   hasRole(role: UserRole): boolean {
-    const user = this.getCurrentUser();
-    return user?.role === role;
+    let hasRequiredRole = false;
+    this.getCurrentUser().subscribe(user => {
+      if (user) {
+        hasRequiredRole = user.role === role;
+      }
+    }).unsubscribe();
+    return hasRequiredRole;
   }
 
   // Obtener el token actual

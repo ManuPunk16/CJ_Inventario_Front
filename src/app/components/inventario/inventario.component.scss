@@ -16,9 +16,9 @@
   border-bottom: 1px solid rgba(0, 0, 0, 0.12);
 }
 
-.mat-mdc-paginator {
-  background: transparent;
-}
+// .mat-mdc-paginator {
+//   background: transparent;
+// }
 
 .loading-shade {
   position: absolute;
@@ -51,4 +51,32 @@
 .cantidad-baja {
   color: var(--error-color);
   font-weight: bold;
+}
+
+// Estilos para el paginador
+::ng-deep .mat-mdc-paginator {
+  background: white;
+  border-top: 1px solid rgba(0, 0, 0, 0.12);
+
+  // Quitar borde negro del selector de items por página
+  .mat-mdc-select {
+    .mdc-text-field--outlined {
+      .mdc-notched-outline {
+        border-color: rgba(0, 0, 0, 0.12) !important;
+      }
+    }
+  }
+
+  // Estilo para el menú dropdown cuando se abre
+  .mat-mdc-select-panel {
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+}
+
+// Estilo para el menú de opciones de items por página
+::ng-deep .mat-mdc-select-panel {
+  background: white !important;
 }

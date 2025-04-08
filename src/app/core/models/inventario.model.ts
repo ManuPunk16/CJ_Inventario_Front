@@ -89,8 +89,8 @@ export interface InventarioResponse extends ApiResponse<Inventario> {
 export interface InventariosResponse extends ApiResponse<Inventario[]> {
   status: 'success' | 'error';
   message?: string;
-  items: Inventario[]; // Cambiamos data por items para mantener consistencia
-  totalItems?: number;
-  page?: number;
-  totalPages?: number;
+  items: Inventario[];
+  totalItems: number;
+  page: number;
+  totalPages: number;
 }

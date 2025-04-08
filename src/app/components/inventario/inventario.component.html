@@ -132,7 +132,12 @@
 
         <!-- Paginador -->
         <mat-paginator
-          [pageSizeOptions]="[5, 10, 25, 100]"
+          [length]="totalItems"
+          [pageSize]="pageSize"
+          [pageSizeOptions]="pageSizeOptions"
+          [showFirstLastButtons]="true"
+          [pageIndex]="currentPage"
+          (page)="onPageChange($event)"
           aria-label="Seleccionar página de items">
         </mat-paginator>
       </div>

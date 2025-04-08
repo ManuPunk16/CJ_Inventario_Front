@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { environment } from '../../environments/environments';
 import {
@@ -19,12 +19,17 @@ export class InventarioService {
 
   constructor(private http: HttpClient) {}
 
-  getInventario(): Observable<InventariosResponse> {
+  getInventario(page: number = 0, pageSize: number = 10): Observable<InventariosResponse> {
+    const params = new HttpParams()
+      .set('page', page.toString())
+      .set('pageSize', pageSize.toString());
+
     const token = localStorage.getItem('token');
     const headers = new HttpHeaders({
       Authorization: `Bearer ${token}`,
     });
-    return this.http.get<InventariosResponse>(this.apiUrl, { headers });
+
+    return this.http.get<InventariosResponse>(this.apiUrl, { headers, params });
   }
 
   // inventario.service.ts

@@ -50,6 +50,11 @@
 
       <!-- Perfil y menú de usuario -->
       <div class="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
+        <!-- Nombre del usuario -->
+        <span class="text-gray-300 mr-3 text-sm hidden sm:block">
+          {{ currentUser?.username || 'Usuario' }}
+        </span>
+
         <div class="relative ml-3">
           <button
             #profileButton
@@ -69,12 +74,16 @@
             class="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
             role="menu"
           >
-            <a href="#"
+            <!-- <a href="#"
                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                role="menuitem">Mi Perfil</a>
             <a href="#"
                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-               role="menuitem">Configuración</a>
+               role="menuitem">Configuración</a> -->
+            <a [routerLink]="['/register']"
+               routerLinkActive="bg-[var(--primary-500)] text-white"
+               class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+               role="menuitem">Registrar Usuario</a>
             <button
               (click)="logout()"
               class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"

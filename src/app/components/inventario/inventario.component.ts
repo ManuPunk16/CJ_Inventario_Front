@@ -100,8 +100,127 @@ export class InventarioComponent implements OnInit {
   }
 
   editarItem(item: Inventario): void {
-    // Implementar navegación a la vista de edición
-    this.router.navigate(['/inventario/editar', item._id]);
+    if (!this.authService.hasRole('admin')) {
+      Swal.fire({
+        title: 'Error',
+        text: 'No tienes permisos para realizar esta acción',
+        icon: 'error',
+        confirmButtonColor: 'var(--primary-500)'
+      });
+      return;
+    }
+
+    Swal.fire({
+      title: 'Editar Item de Inventario',
+      html: `
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700">
+              Tipo de Material <span class="text-red-500">*</span>
+            </label>
+            <select id="tipoMaterial" class="mt-1 block w-full p-2 border rounded-md focus:border-[var(--primary-500)] focus:ring-[var(--primary-500)]">
+              <option value="">Seleccione un tipo</option>
+              <option value="oficina" ${item.tipoMaterial === 'oficina' ? 'selected' : ''}>Material de Oficina</option>
+              <option value="limpieza" ${item.tipoMaterial === 'limpieza' ? 'selected' : ''}>Material de Limpieza</option>
+              <option value="varios" ${item.tipoMaterial === 'varios' ? 'selected' : ''}>Varios</option>
+            </select>
+            <span id="tipoMaterial-error" class="text-red-500 text-xs hidden">Campo requerido</span>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">
+              Nombre <span class="text-red-500">*</span>
+            </label>
+            <input id="nombre" type="text" value="${item.nombre}" class="mt-1 block w-full p-2 border rounded-md focus:border-[var(--primary-500)] focus:ring-[var(--primary-500)]">
+            <span id="nombre-error" class="text-red-500 text-xs hidden">Campo requerido</span>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">
+              Stock Mínimo
+            </label>
+            <input id="stockMinimo" type="number" value="${item.stockMinimo}" min="0" class="mt-1 block w-full p-2 border rounded-md focus:border-[var(--primary-500)] focus:ring-[var(--primary-500)]">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">
+              Anaquel <span class="text-red-500">*</span>
+            </label>
+            <input id="anaquel" type="text" value="${item.ubicacion.anaquel}" class="mt-1 block w-full p-2 border rounded-md focus:border-[var(--primary-500)] focus:ring-[var(--primary-500)]">
+            <span id="anaquel-error" class="text-red-500 text-xs hidden">Campo requerido</span>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">
+              Nivel <span class="text-red-500">*</span>
+            </label>
+            <input id="nivel" type="number" value="${item.ubicacion.nivel}" min="1" class="mt-1 block w-full p-2 border rounded-md focus:border-[var(--primary-500)] focus:ring-[var(--primary-500)]">
+            <span id="nivel-error" class="text-red-500 text-xs hidden">Campo requerido</span>
+          </div>
+        </div>
+      `,
+      showCancelButton: true,
+      confirmButtonText: 'Guardar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: 'var(--primary-500)',
+      cancelButtonColor: 'var(--gray-500)',
+      preConfirm: () => {
+        const valores: { [key: string]: any } = {};
+        const camposRequeridos = ['tipoMaterial', 'nombre', 'anaquel', 'nivel'];
+        const errores: string[] = [];
+
+        camposRequeridos.forEach(campo => {
+          const elemento = document.getElementById(campo) as HTMLInputElement | HTMLSelectElement;
+          const valor = elemento.value.trim();
+          valores[campo] = valor;
+
+          if (!valor) {
+            elemento.classList.add('border-red-500');
+            const errorSpan = document.getElementById(`${campo}-error`);
+            if (errorSpan) errorSpan.classList.remove('hidden');
+            errores.push(`El campo ${campo} es requerido`);
+          }
+        });
+
+        if (errores.length > 0) {
+          Swal.showValidationMessage(errores.join('<br>'));
+          return false;
+        }
+
+        valores['stockMinimo'] = parseInt((document.getElementById('stockMinimo') as HTMLInputElement).value) || 0;
+
+        // Crear el objeto de ubicación
+        valores['ubicacion'] = {
+          anaquel: valores['anaquel'].toUpperCase(),
+          nivel: parseInt(valores['nivel'])
+        };
+
+        // Eliminar propiedades redundantes
+        delete valores['anaquel'];
+
+        return valores;
+      }
+    }).then((result) => {
+      if (result.isConfirmed && result.value) {
+        this.inventarioService.actualizarInventario(item._id!, result.value).subscribe({
+          next: (response) => {
+            if (response.status === 'success') {
+              Swal.fire({
+                title: '¡Éxito!',
+                text: 'Item actualizado correctamente',
+                icon: 'success',
+                confirmButtonColor: 'var(--primary-500)'
+              });
+              this.cargarInventario();
+            }
+          },
+          error: (error) => {
+            Swal.fire({
+              title: 'Error',
+              text: error.error?.message || 'Error al actualizar el item',
+              icon: 'error',
+              confirmButtonColor: 'var(--primary-500)'
+            });
+          }
+        });
+      }
+    });
   }
 
   nuevoItem(): void {

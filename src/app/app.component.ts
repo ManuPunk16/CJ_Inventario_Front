@@ -1,7 +1,8 @@
-import { Component, OnInit, ElementRef, ViewChild, HostListener } from '@angular/core';
+import { Component, OnInit, OnDestroy, ElementRef, ViewChild, HostListener } from '@angular/core';
 import { RouterOutlet, Router, RouterLink } from '@angular/router';
 import { AuthService } from './core/services/auth.service';
 import { CommonModule } from '@angular/common';
+import { InactivityService } from './core/services/inactivity.service';
 
 @Component({
   selector: 'app-root',
@@ -14,7 +15,7 @@ import { CommonModule } from '@angular/common';
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss']
 })
-export class AppComponent implements OnInit {
+export class AppComponent implements OnInit, OnDestroy {
   @ViewChild('profileDropdown') profileDropdown?: ElementRef;
   @ViewChild('profileButton') profileButton?: ElementRef;
 
@@ -23,13 +24,19 @@ export class AppComponent implements OnInit {
 
   constructor(
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private inactivityService: InactivityService
   ) {}
 
   ngOnInit(): void {
     if (!this.authService.isAuthenticated()) {
       this.router.navigate(['/login']);
     }
+    this.inactivityService.startWatching();
+  }
+
+  ngOnDestroy(): void {
+    this.inactivityService.stopWatching();
   }
 
   get isLoggedIn(): boolean {

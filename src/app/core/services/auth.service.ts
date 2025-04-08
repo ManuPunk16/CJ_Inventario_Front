@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { Observable, BehaviorSubject, throwError } from 'rxjs';
+import { tap, catchError } from 'rxjs/operators';
 import { environment } from '../../../environments/environments';
 import {
   LoginRequest,
@@ -19,6 +19,8 @@ export class AuthService {
   private apiUrl = environment.apiUrl + '/auth';
   private userSubject = new BehaviorSubject<User | null>(null);
   user$ = this.userSubject.asObservable();
+  private refreshTokenInProgress = false;
+  private refreshTokenSubject: BehaviorSubject<any> = new BehaviorSubject<any>(null);
 
   constructor(private http: HttpClient) {
     // Verificar si hay un usuario almacenado al iniciar el servicio
@@ -90,5 +92,32 @@ export class AuthService {
     } catch {
       return true;
     }
+  }
+
+  // Método para refrescar el token
+  refreshToken(): Observable<any> {
+    if (this.refreshTokenInProgress) {
+      return this.refreshTokenSubject.asObservable();
+    }
+
+    this.refreshTokenInProgress = true;
+    this.refreshTokenSubject.next(null);
+
+    const refreshToken = localStorage.getItem('refresh-token');
+
+    return this.http.post<any>(`${this.apiUrl}/refresh-token`, { refreshToken }).pipe(
+      tap((response) => {
+        this.refreshTokenInProgress = false;
+        this.refreshTokenSubject.next(response);
+        // Guardar el nuevo token
+        localStorage.setItem('token', response.accessToken);
+        localStorage.setItem('refresh-token', response.refreshToken);
+      }),
+      catchError((error) => {
+        this.refreshTokenInProgress = false;
+        this.logout();
+        return throwError(() => error);
+      })
+    );
   }
 }

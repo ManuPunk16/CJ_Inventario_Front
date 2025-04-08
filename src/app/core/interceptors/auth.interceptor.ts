@@ -1,47 +1,38 @@
-import { HttpInterceptorFn, HttpRequest, HttpHandlerFn, HttpErrorResponse } from '@angular/common/http';
+import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { catchError, throwError } from 'rxjs';
-import { Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
+import { Router } from '@angular/router';
+import { catchError, throwError, switchMap } from 'rxjs';
 
-export const AuthInterceptor: HttpInterceptorFn = (
-  req: HttpRequest<unknown>,
-  next: HttpHandlerFn
-) => {
+export const AuthInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
   const router = inject(Router);
 
-  const token = authService.getToken();
-
-  // No modificar las solicitudes a endpoints de autenticación
-  if (req.url.includes('/auth/login') || req.url.includes('/auth/register')) {
-    return next(req);
-  }
-
+  const token = localStorage.getItem('token');
   if (token) {
-    // Verificar si el token ha expirado
-    if (authService.isTokenExpired()) {
-      authService.logout();
-      router.navigate(['/login']);
-      return throwError(() => new Error('Token expirado'));
-    }
-
-    // Clonar la solicitud y añadir el token
-    const authReq = req.clone({
+    req = req.clone({
       headers: req.headers.set('Authorization', `Bearer ${token}`)
     });
-
-    // Procesar la solicitud con el token
-    return next(authReq).pipe(
-      catchError((error: HttpErrorResponse) => {
-        if (error.status === 401) {
-          authService.logout();
-          router.navigate(['/login']);
-        }
-        return throwError(() => error);
-      })
-    );
   }
 
-  return next(req);
+  return next(req).pipe(
+    catchError(error => {
+      if (error.status === 401) {
+        return authService.refreshToken().pipe(
+          switchMap(token => {
+            req = req.clone({
+              headers: req.headers.set('Authorization', `Bearer ${token.accessToken}`)
+            });
+            return next(req);
+          }),
+          catchError(refreshError => {
+            authService.logout();
+            router.navigate(['/login']);
+            return throwError(() => refreshError);
+          })
+        );
+      }
+      return throwError(() => error);
+    })
+  );
 };

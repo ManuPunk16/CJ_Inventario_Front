@@ -36,11 +36,18 @@ export class AuthService {
           localStorage.setItem('token', response.token);
           if (response.user) {
             localStorage.setItem('user', JSON.stringify(response.user));
-            this.userSubject.next(response.user);
+            this.refreshUserData();
           }
         }
       })
     );
+  }
+
+  refreshUserData(): void {
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      this.userSubject.next(JSON.parse(userData));
+    }
   }
 
   register(userData: RegisterRequest): Observable<AuthResponse> {

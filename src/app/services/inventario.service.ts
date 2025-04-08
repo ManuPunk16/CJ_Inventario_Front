@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
 import { environment } from '../../environments/environments';
 import {
   Inventario,
@@ -27,16 +27,20 @@ export class InventarioService {
     return this.http.get<InventariosResponse>(this.apiUrl, { headers });
   }
 
-  crearInventario(
-    inventario: Omit<Inventario, '_id'>
-  ): Observable<InventarioResponse> {
+  // inventario.service.ts
+  crearInventario(inventario: Omit<Inventario, '_id'>): Observable<InventarioResponse> {
     const token = localStorage.getItem('token');
+    if (!token) {
+      // Manejar el caso de no tener token
+      return throwError(() => new Error('No hay token de autenticación'));
+    }
+
     const headers = new HttpHeaders({
-      Authorization: `Bearer ${token}`,
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
     });
-    return this.http.post<InventarioResponse>(this.apiUrl, inventario, {
-      headers,
-    });
+
+    return this.http.post<InventarioResponse>(this.apiUrl, inventario, { headers });
   }
 
   actualizarInventario(

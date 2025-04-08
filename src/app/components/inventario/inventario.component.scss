@@ -1,0 +1,54 @@
+.mat-mdc-table {
+  width: 100%;
+  background: white;
+}
+
+.mat-mdc-row:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+.mat-mdc-header-cell {
+  font-weight: bold;
+  color: var(--primary-900);
+}
+
+.mat-mdc-cell {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.mat-mdc-paginator {
+  background: transparent;
+}
+
+.loading-shade {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 56px;
+  right: 0;
+  background: rgba(0, 0, 0, 0.15);
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mat-column-acciones {
+  width: 200px;
+  text-align: center;
+}
+
+.mat-column-cantidad {
+  width: 100px;
+  text-align: right;
+}
+
+.mat-column-stockMinimo {
+  width: 100px;
+  text-align: right;
+}
+
+.cantidad-baja {
+  color: var(--error-color);
+  font-weight: bold;
+}

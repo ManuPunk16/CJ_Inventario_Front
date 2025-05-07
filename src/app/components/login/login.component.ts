@@ -48,7 +48,7 @@ export class LoginComponent implements OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response) => {
-          if (response.status === 'success' && response.token) {
+          if (response.status === 'success') {
             this.router.navigate(['/inventario']);
           } else {
             this.errorMessage = 'Error en la respuesta del servidor';

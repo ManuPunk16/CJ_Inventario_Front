@@ -1,10 +1,9 @@
 export type UserRole = 'admin' | 'user';
 
 export interface User {
-    id?: string;
+    id: string;
     username: string;
-    password?: string;
-    role?: UserRole;
+    role: UserRole;
 }
 
 export interface LoginRequest {
@@ -26,7 +25,17 @@ export interface RegisterRequest {
 }
 
 export interface AuthResponse {
-    status: 'success' | 'error';
-    message: string;
-    data?: any;
+    status: string;
+    accessToken: string;
+    refreshToken: string;
+    user: User;
+}
+
+export interface RefreshTokenRequest {
+    refreshToken: string;
+}
+
+export interface RefreshTokenResponse {
+    status: string;
+    accessToken: string;
 }

@@ -24,8 +24,8 @@ export class InactivityService {
   private resetTimer() {
     clearTimeout(this.timeoutId);
     this.timeoutId = setTimeout(() => {
+      // El logout ahora maneja la redirección internamente
       this.authService.logout();
-      this.router.navigate(['/login']);
     }, this.INACTIVITY_TIMEOUT);
   }
 

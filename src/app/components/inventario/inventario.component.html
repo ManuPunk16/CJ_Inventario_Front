@@ -1,133 +1,154 @@
 <div class="container mx-auto px-4 py-8">
   <!-- Header con título y botón de nuevo -->
-  <div class="flex justify-between items-center mb-6">
-    <h1 class="text-2xl font-bold text-[var(--primary-900)]">
+  <div class="flex justify-between items-center mb-8">
+    <h1 class="text-3xl font-bold text-[var(--primary-900)] flex items-center">
+      <mat-icon class="mr-2 text-[var(--primary-500)]">inventory_2</mat-icon>
       Inventario
     </h1>
     <button
       mat-raised-button
       color="primary"
       (click)="nuevoItem()"
-      class="bg-[var(--primary-500)] hover:bg-[var(--primary-700)] text-white">
-      <mat-icon>add</mat-icon>
+      class="bg-[var(--primary-500)] hover:bg-[var(--primary-700)] text-white py-2 px-4 rounded-lg shadow-md transition-all duration-300 flex items-center">
+      <mat-icon class="mr-1">add</mat-icon>
       Nuevo Item
     </button>
   </div>
 
   <!-- Tarjeta principal -->
-  <mat-card class="bg-white shadow-lg rounded-lg overflow-hidden">
-    <mat-card-content>
+  <mat-card class="bg-white shadow-lg rounded-lg overflow-hidden border border-gray-100">
+    <mat-card-content class="p-4">
       <!-- Buscador -->
-      <div class="mb-6">
+      <div class="mb-8">
         <mat-form-field class="w-full">
           <mat-label>Buscar</mat-label>
-          <input matInput (keyup)="aplicarFiltro($event)" placeholder="Ej. Hojas blancas" #input>
+          <input matInput (keyup)="aplicarFiltro($event)" placeholder="Ej. Hojas blancas" #input class="py-1">
+          <mat-icon matSuffix class="text-gray-500">search</mat-icon>
         </mat-form-field>
       </div>
 
       <!-- Tabla -->
-      <div class="overflow-x-auto">
+      <div class="overflow-x-auto rounded-lg border border-gray-100">
         <table mat-table [dataSource]="dataSource" matSort class="w-full">
           <!-- Acciones -->
           <ng-container matColumnDef="acciones">
-            <th mat-header-cell *matHeaderCellDef> Acciones </th>
-            <td mat-cell *matCellDef="let row">
-              <button
-                mat-icon-button
-                color="primary"
-                (click)="verDetalles(row)"
-                class="text-[var(--primary-500)] hover:text-[var(--primary-700)]">
-                <mat-icon>visibility</mat-icon>
-              </button>
-              <button
-                mat-icon-button
-                color="accent"
-                (click)="editarItem(row)"
-                class="text-[var(--secondary-500)] hover:text-[var(--secondary-700)]">
-                <mat-icon>edit</mat-icon>
-              </button>
-              <!-- Nuevo botón para entrada -->
-              <button
-                mat-icon-button
-                color="primary"
-                (click)="agregarEntrada(row)"
-                class="text-green-600 hover:text-green-800">
-                <mat-icon>add_circle</mat-icon>
-              </button>
-              <!-- Nuevo botón para salida -->
-              <button
-                mat-icon-button
-                color="warn"
-                (click)="agregarSalida(row)"
-                class="text-red-600 hover:text-red-800">
-                <mat-icon>remove_circle</mat-icon>
-              </button>
+            <th mat-header-cell *matHeaderCellDef class="bg-gray-50 py-4"> Acciones </th>
+            <td mat-cell *matCellDef="let row" class="py-3">
+              <div class="flex space-x-1">
+                <button
+                  mat-icon-button
+                  matTooltip="Ver detalles"
+                  (click)="verDetalles(row)"
+                  class="text-[var(--primary-500)] hover:text-[var(--primary-700)] transition-colors duration-200">
+                  <mat-icon>visibility</mat-icon>
+                </button>
+                <button
+                  mat-icon-button
+                  matTooltip="Editar"
+                  (click)="editarItem(row)"
+                  class="text-[var(--secondary-500)] hover:text-[var(--secondary-700)] transition-colors duration-200">
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button
+                  mat-icon-button
+                  matTooltip="Agregar entrada"
+                  (click)="agregarEntrada(row)"
+                  class="text-green-600 hover:text-green-800 transition-colors duration-200">
+                  <mat-icon>add_circle</mat-icon>
+                </button>
+                <button
+                  mat-icon-button
+                  matTooltip="Registrar salida"
+                  (click)="agregarSalida(row)"
+                  class="text-red-600 hover:text-red-800 transition-colors duration-200">
+                  <mat-icon>remove_circle</mat-icon>
+                </button>
+              </div>
             </td>
           </ng-container>
 
           <!-- Código de Ubicación -->
           <ng-container matColumnDef="codigoUbicacion">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header> Código </th>
-            <td mat-cell *matCellDef="let row"> {{row.codigoUbicacion}} </td>
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-gray-50 py-4"> Código </th>
+            <td mat-cell *matCellDef="let row" class="py-3 font-mono text-sm"> {{row.codigoUbicacion}} </td>
           </ng-container>
 
           <!-- Tipo de Material -->
           <ng-container matColumnDef="tipoMaterial">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header> Tipo </th>
-            <td mat-cell *matCellDef="let row"> {{row.tipoMaterial}} </td>
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-gray-50 py-4"> Tipo </th>
+            <td mat-cell *matCellDef="let row" class="py-3 capitalize"> {{row.tipoMaterial}} </td>
           </ng-container>
 
           <!-- Nombre -->
           <ng-container matColumnDef="nombre">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header> Nombre </th>
-            <td mat-cell *matCellDef="let row"> {{row.nombre}} </td>
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-gray-50 py-4"> Nombre </th>
+            <td mat-cell *matCellDef="let row" class="py-3 font-medium"> {{row.nombre}} </td>
           </ng-container>
 
           <!-- Cantidad -->
           <ng-container matColumnDef="cantidad">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header> Cantidad </th>
-            <td mat-cell *matCellDef="let row" [ngClass]="{'text-red-600': row.cantidad <= row.stockMinimo}">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-gray-50 py-4"> Cantidad </th>
+            <td mat-cell *matCellDef="let row" class="py-3 text-right font-medium" 
+                [ngClass]="{'text-red-600 font-bold': row.cantidad <= row.stockMinimo, 'text-green-600': row.cantidad > row.stockMinimo * 2}">
               {{row.cantidad}}
             </td>
           </ng-container>
 
           <!-- Unidad de Medida -->
           <ng-container matColumnDef="unidadMedida">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header> Unidad </th>
-            <td mat-cell *matCellDef="let row"> {{row.unidadMedida}} </td>
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-gray-50 py-4"> Unidad </th>
+            <td mat-cell *matCellDef="let row" class="py-3 italic text-gray-700"> {{row.unidadMedida}} </td>
           </ng-container>
 
           <!-- Ubicación -->
           <ng-container matColumnDef="ubicacion">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header> Ubicación </th>
-            <td mat-cell *matCellDef="let row">
-              Anaquel: {{row.ubicacion.anaquel}} - Nivel: {{row.ubicacion.nivel}}
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-gray-50 py-4"> Ubicación </th>
+            <td mat-cell *matCellDef="let row" class="py-3">
+              <span class="px-2 py-1 bg-gray-100 rounded-md text-sm">
+                A: {{row.ubicacion.anaquel}} - N: {{row.ubicacion.nivel}}
+              </span>
             </td>
           </ng-container>
 
           <!-- Stock Mínimo -->
           <ng-container matColumnDef="stockMinimo">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header> Stock Mínimo </th>
-            <td mat-cell *matCellDef="let row"> {{row.stockMinimo}} </td>
+            <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-gray-50 py-4"> Stock Mínimo </th>
+            <td mat-cell *matCellDef="let row" class="py-3 text-right"> {{row.stockMinimo}} </td>
           </ng-container>
 
-          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+          <tr mat-header-row *matHeaderRowDef="displayedColumns" class="bg-gray-50"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;" 
+              class="hover:bg-gray-50 transition-colors duration-150 border-b border-gray-100"></tr>
         </table>
 
-        <!-- Loading y Error -->
-        <div *ngIf="isLoading" class="py-8 text-center">
-          <mat-spinner diameter="40" class="mx-auto"></mat-spinner>
-          <p class="mt-4 text-gray-600">Cargando inventario...</p>
+        <!-- Loading -->
+        <div *ngIf="isLoading" class="py-16 text-center bg-white">
+          <mat-spinner diameter="50" class="mx-auto"></mat-spinner>
+          <p class="mt-6 text-gray-600 font-medium">Cargando inventario...</p>
         </div>
 
-        <div *ngIf="errorMessage" class="py-8 text-center">
-          <p class="text-red-600">{{errorMessage}}</p>
+        <!-- Error -->
+        <div *ngIf="errorMessage" class="py-16 text-center bg-white">
+          <div class="flex flex-col items-center">
+            <mat-icon class="text-red-500 text-5xl mb-4">error_outline</mat-icon>
+            <p class="text-red-600 font-medium text-lg">{{errorMessage}}</p>
+            <button mat-stroked-button color="primary" (click)="cargarInventario()" class="mt-4">
+              Reintentar
+            </button>
+          </div>
         </div>
 
         <!-- No Results -->
-        <div *ngIf="!isLoading && dataSource.data.length === 0" class="py-8 text-center">
-          <p class="text-gray-600">No hay items en el inventario</p>
+        <div *ngIf="!isLoading && !errorMessage && dataSource.data.length === 0" class="py-16 text-center bg-white">
+          <div class="flex flex-col items-center">
+            <mat-icon class="text-gray-400 text-5xl mb-4">inventory</mat-icon>
+            <p class="text-gray-600 font-medium text-lg mb-2">No hay items en el inventario</p>
+            <p class="text-gray-500 mb-4">Puedes agregar nuevos items con el botón "Nuevo Item"</p>
+            <button mat-raised-button color="primary" (click)="nuevoItem()" class="bg-[var(--primary-500)]">
+              <mat-icon class="mr-1">add</mat-icon>
+              Agregar Item
+            </button>
+          </div>
         </div>
 
         <!-- Paginador -->
@@ -138,7 +159,8 @@
           [showFirstLastButtons]="true"
           [pageIndex]="currentPage"
           (page)="onPageChange($event)"
-          aria-label="Seleccionar página de items">
+          aria-label="Seleccionar página de items"
+          class="border-t border-gray-100">
         </mat-paginator>
       </div>
     </mat-card-content>

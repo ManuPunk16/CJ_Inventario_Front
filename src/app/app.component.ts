@@ -34,11 +34,16 @@ export class AppComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    if (!this.authService.isAuthenticated()) {
+    // Verificar autenticación usando el nuevo método
+    if (!this.authService.isLoggedIn()) {
       this.router.navigate(['/login']);
     }
+
+    // Iniciar el servicio de inactividad
     this.inactivityService.startWatching();
-    this.authService.getCurrentUser()
+    
+    // Suscribirse al usuario actual usando el nuevo observable
+    this.authService.user$
       .pipe(takeUntil(this.destroy$))
       .subscribe(user => {
         this.currentUser = user;
@@ -52,7 +57,8 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   get isLoggedIn(): boolean {
-    return this.authService.isAuthenticated();
+    // Usar el nuevo método de verificación de autenticación
+    return this.authService.isLoggedIn();
   }
 
   @HostListener('document:click', ['$event'])
@@ -81,8 +87,18 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   logout(): void {
+    // El método logout ahora maneja internamente la redirección
     this.authService.logout();
     this.isProfileDropdownOpen = false;
-    this.router.navigate(['/login']);
+  }
+
+  // Función auxiliar para mostrar el nombre de usuario
+  getUserName(): string {
+    return this.currentUser?.username || 'Usuario';
+  }
+
+  // Verificar si el usuario tiene un rol específico
+  hasRole(role: string): boolean {
+    return this.authService.hasRole(role);
   }
 }

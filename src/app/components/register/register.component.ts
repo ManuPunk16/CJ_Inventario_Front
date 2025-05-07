@@ -4,9 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { Subject } from 'rxjs';
-import { takeUntil, filter } from 'rxjs/operators';
+import { takeUntil } from 'rxjs/operators';
 import { Location } from '@angular/common';
-import { RegisterRequest, User, UserRole } from '../../core/models/auth.model';
+import { RegisterRequest, UserRole } from '../../core/models/auth.model';
 
 @Component({
   selector: 'app-register',
@@ -34,22 +34,10 @@ export class RegisterComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit() {
-    // Verificar si el usuario actual es administrador
-    this.authService.getCurrentUser()
-      .pipe(
-        takeUntil(this.destroy$),
-        filter((user): user is User => user !== null) // Type guard para asegurar que user no es null
-      )
-      .subscribe({
-        next: (user) => {
-          if (user.role && user.role !== 'admin') {
-            this.router.navigate(['/']);
-          }
-        },
-        error: () => {
-          this.router.navigate(['/']);
-        }
-      });
+    // Verificar si el usuario tiene permisos de administrador
+    if (!this.authService.hasRole('admin')) {
+      this.router.navigate(['/']);
+    }
   }
 
   register(): void {
@@ -66,17 +54,17 @@ export class RegisterComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (response) => {
           if (response.status === 'success') {
-            // Mostrar mensaje de éxito y redirigir
-            // Puedes usar un servicio de notificaciones aquí
-            this.router.navigate(['/users']);
+            this.router.navigate(['/admin/users'], { 
+              queryParams: { created: true } 
+            });
           } else {
-            this.errorMessage = 'Error al crear el usuario';
+            this.errorMessage = 'Error en la respuesta del servidor';
           }
           this.isLoading = false;
         },
         error: (error) => {
-          console.error('Error al crear usuario:', error);
-          this.errorMessage = error.error?.message || 'Error al crear el usuario. Por favor, inténtelo de nuevo.';
+          console.error('Error al registrar usuario:', error);
+          this.errorMessage = error.error?.message || 'Error al registrar usuario. Por favor, inténtelo de nuevo.';
           this.isLoading = false;
         }
       });

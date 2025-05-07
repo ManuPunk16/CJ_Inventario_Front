@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit, ViewChild, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
 import { MatPaginatorModule, MatPaginator, PageEvent } from '@angular/material/paginator';
@@ -13,8 +13,18 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Router } from '@angular/router';
 import { InventarioService } from '../../services/inventario.service';
 import { Inventario, AreaTipo } from '../../core/models/inventario.model';
-import Swal from 'sweetalert2';
 import { AuthService } from '../../core/services/auth.service';
+import { 
+  AREAS, 
+  TIPO_MATERIAL, 
+  UNIDAD_MEDIDA, 
+  getAreaValues, 
+  getTipoMaterialValues, 
+  getUnidadMedidaValues 
+} from '../../utils/enums';
+import Swal from 'sweetalert2';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-inventario',
@@ -35,7 +45,7 @@ import { AuthService } from '../../core/services/auth.service';
   templateUrl: './inventario.component.html',
   styleUrls: ['./inventario.component.scss']
 })
-export class InventarioComponent implements OnInit {
+export class InventarioComponent implements OnInit, OnDestroy {
   displayedColumns: string[] = [
     'acciones',
     'codigoUbicacion',
@@ -54,6 +64,13 @@ export class InventarioComponent implements OnInit {
   pageSize = 25;
   pageSizeOptions: number[] = [5, 10, 25, 50, 100];
   currentPage = 0;
+  currentUser: any = null;
+  private destroy$ = new Subject<void>();
+
+  // Hacer disponibles las enumeraciones en la plantilla
+  AREAS_VALUES = getAreaValues();
+  TIPO_MATERIAL_VALUES = getTipoMaterialValues();
+  UNIDAD_MEDIDA_VALUES = getUnidadMedidaValues();
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
@@ -66,6 +83,18 @@ export class InventarioComponent implements OnInit {
 
   ngOnInit(): void {
     this.cargarInventario();
+    
+    // Suscribirse al usuario actual
+    this.authService.user$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(user => {
+        this.currentUser = user;
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   ngAfterViewInit() {
@@ -113,7 +142,6 @@ export class InventarioComponent implements OnInit {
   }
 
   verDetalles(item: Inventario): void {
-    // Implementar navegación a la vista de detalles
     this.router.navigate(['/inventario/detalles', item._id]);
   }
 
@@ -138,9 +166,9 @@ export class InventarioComponent implements OnInit {
             </label>
             <select id="tipoMaterial" class="mt-1 block w-full p-2 border rounded-md focus:border-[var(--primary-500)] focus:ring-[var(--primary-500)]">
               <option value="">Seleccione un tipo</option>
-              <option value="oficina" ${item.tipoMaterial === 'oficina' ? 'selected' : ''}>Material de Oficina</option>
-              <option value="limpieza" ${item.tipoMaterial === 'limpieza' ? 'selected' : ''}>Material de Limpieza</option>
-              <option value="varios" ${item.tipoMaterial === 'varios' ? 'selected' : ''}>Varios</option>
+              ${this.TIPO_MATERIAL_VALUES.map(tipo => 
+                `<option value="${tipo}" ${item.tipoMaterial === tipo ? 'selected' : ''}>${this.formatTipoMaterial(tipo)}</option>`
+              ).join('')}
             </select>
             <span id="tipoMaterial-error" class="text-red-500 text-xs hidden">Campo requerido</span>
           </div>
@@ -211,6 +239,7 @@ export class InventarioComponent implements OnInit {
 
         // Eliminar propiedades redundantes
         delete valores['anaquel'];
+        delete valores['nivel'];
 
         return valores;
       }
@@ -262,9 +291,9 @@ export class InventarioComponent implements OnInit {
             </label>
             <select id="tipoMaterial" class="mt-1 block w-full p-2 border rounded-md focus:border-[var(--primary-500)] focus:ring-[var(--primary-500)]">
               <option value="">Seleccione un tipo</option>
-              <option value="oficina">Material de Oficina</option>
-              <option value="limpieza">Material de Limpieza</option>
-              <option value="varios">Varios</option>
+              ${this.TIPO_MATERIAL_VALUES.map(tipo => 
+                `<option value="${tipo}">${this.formatTipoMaterial(tipo)}</option>`
+              ).join('')}
             </select>
             <span id="tipoMaterial-error" class="text-red-500 text-xs hidden">Campo requerido</span>
           </div>
@@ -288,17 +317,9 @@ export class InventarioComponent implements OnInit {
             </label>
             <select id="unidadMedida" class="mt-1 block w-full p-2 border rounded-md focus:border-[var(--primary-500)] focus:ring-[var(--primary-500)]">
               <option value="">Seleccione una unidad</option>
-              <option value="pieza">Pieza</option>
-              <option value="litro">Litro</option>
-              <option value="kilogramo">Kilogramo</option>
-              <option value="metro">Metro</option>
-              <option value="gramo">Gramo</option>
-              <option value="mililitro">Mililitro</option>
-              <option value="unidad">Unidad</option>
-              <option value="caja">Caja</option>
-              <option value="paquete">Paquete</option>
-              <option value="rollo">Rollo</option>
-              <option value="otro">Otro</option>
+              ${this.UNIDAD_MEDIDA_VALUES.map(unidad => 
+                `<option value="${unidad}">${this.formatUnidadMedida(unidad)}</option>`
+              ).join('')}
             </select>
             <span id="unidadMedida-error" class="text-red-500 text-xs hidden">Campo requerido</span>
           </div>
@@ -421,7 +442,8 @@ export class InventarioComponent implements OnInit {
       }
     }).then((result) => {
       if (result.isConfirmed && result.value) {
-        this.inventarioService.crearInventario(result.value).subscribe({
+        const nuevoInventario: Omit<Inventario, '_id'> = result.value as Omit<Inventario, '_id'>;
+        this.inventarioService.crearInventario(nuevoInventario).subscribe({
           next: (response) => {
             if (response.status === 'success') {
               Swal.fire({
@@ -447,18 +469,50 @@ export class InventarioComponent implements OnInit {
   }
 
   eliminarItem(id: string): void {
-    if (confirm('¿Está seguro de eliminar este item?')) {
-      this.inventarioService.eliminarInventario(id).subscribe({
-        next: (response) => {
-          if (response.status === 'success') {
-            this.cargarInventario();
-          }
-        },
-        error: (error) => {
-          console.error('Error al eliminar:', error);
-        }
+    if (!this.authService.hasRole('admin')) {
+      Swal.fire({
+        title: 'Error',
+        text: 'No tienes permisos para realizar esta acción',
+        icon: 'error',
+        confirmButtonColor: 'var(--primary-500)'
       });
+      return;
     }
+
+    Swal.fire({
+      title: '¿Está seguro?',
+      text: 'Esta acción no se puede revertir',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: 'var(--error-color)',
+      cancelButtonColor: 'var(--gray-500)'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.inventarioService.eliminarInventario(id).subscribe({
+          next: (response) => {
+            if (response.status === 'success') {
+              Swal.fire({
+                title: '¡Eliminado!',
+                text: 'El item ha sido eliminado correctamente',
+                icon: 'success',
+                confirmButtonColor: 'var(--primary-500)'
+              });
+              this.cargarInventario();
+            }
+          },
+          error: (error) => {
+            Swal.fire({
+              title: 'Error',
+              text: error.error?.message || 'Error al eliminar el item',
+              icon: 'error',
+              confirmButtonColor: 'var(--primary-500)'
+            });
+          }
+        });
+      }
+    });
   }
 
   agregarEntrada(item: Inventario): void {
@@ -541,13 +595,11 @@ export class InventarioComponent implements OnInit {
   }
 
   agregarSalida(item: Inventario): void {
-    let usuarioActual: string = 'Usuario Desconocido';
-    this.authService.getCurrentUser().subscribe(user => {
-      usuarioActual = user?.username || 'Usuario Desconocido';
-    });
+    // Obtener usuario actual
+    const usuarioActual = this.currentUser?.username || 'Usuario Desconocido';
 
-      Swal.fire({
-        title: 'Agregar Salida',
+    Swal.fire({
+      title: 'Agregar Salida',
       html: `
         <div class="space-y-4">
           <div>
@@ -563,18 +615,9 @@ export class InventarioComponent implements OnInit {
             </label>
             <select id="area" class="mt-1 block w-full p-2 border rounded-md focus:border-[var(--primary-500)] focus:ring-[var(--primary-500)]">
               <option value="">Seleccione un área</option>
-              <option value="CONSEJERO JURÍDICO">CONSEJERO JURÍDICO</option>
-              <option value="SECRETARIA PARTICULAR Y DE COMUNICACIÓN SOCIAL">SECRETARIA PARTICULAR Y DE COMUNICACIÓN SOCIAL</option>
-              <option value="DIRECCIÓN DE COORDINACIÓN Y CONTROL DE GESTIÓN">DIRECCIÓN DE COORDINACIÓN Y CONTROL DE GESTIÓN</option>
-              <option value="DIRECCIÓN GENERAL DE LO CONTENCIOSO">DIRECCIÓN GENERAL DE LO CONTENCIOSO</option>
-              <option value="DIRECCIÓN DE ASISTENCIA TÉCNICA Y COMBATE A LA CORRUPCIÓN">DIRECCIÓN DE ASISTENCIA TÉCNICA Y COMBATE A LA CORRUPCIÓN</option>
-              <option value="DIRECCIÓN DE SERVICIOS LEGALES">DIRECCIÓN DE SERVICIOS LEGALES</option>
-              <option value="DIRECCIÓN GENERAL CONSULTIVA">DIRECCIÓN GENERAL CONSULTIVA</option>
-              <option value="DIRECCIÓN DE ESTUDIOS LEGISLATIVOS">DIRECCIÓN DE ESTUDIOS LEGISLATIVOS</option>
-              <option value="DIRECCIÓN DE ESTUDIOS JURÍDICOS">DIRECCIÓN DE ESTUDIOS JURÍDICOS</option>
-              <option value="DIRECCIÓN DE COMPILACIÓN NORMATIVA, ARCHIVO E IGUALDAD DE GÉNERO">DIRECCIÓN DE COMPILACIÓN NORMATIVA</option>
-              <option value="DIRECCIÓN ADMINISTRATIVA">DIRECCIÓN ADMINISTRATIVA</option>
-              <option value="UNIDAD DE TRANSPARENCIA">UNIDAD DE TRANSPARENCIA</option>
+              ${this.AREAS_VALUES.map(area => 
+                `<option value="${area}">${area}</option>`
+              ).join('')}
             </select>
             <span id="area-error" class="text-red-500 text-xs hidden">Campo requerido</span>
           </div>
@@ -598,8 +641,9 @@ export class InventarioComponent implements OnInit {
             >
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700">Motivo</label>
+            <label class="block text-sm font-medium text-gray-700">Motivo <span class="text-red-500">*</span></label>
             <textarea id="motivo" class="mt-1 block w-full p-2 border rounded-md focus:border-[var(--primary-500)] focus:ring-[var(--primary-500)]"></textarea>
+            <span id="motivo-error" class="text-red-500 text-xs hidden">Campo requerido</span>
           </div>
         </div>
       `,
@@ -610,7 +654,7 @@ export class InventarioComponent implements OnInit {
       cancelButtonColor: 'var(--gray-500)',
       preConfirm: () => {
         const cantidad = parseInt((document.getElementById('cantidad') as HTMLInputElement).value);
-        const area = (document.getElementById('area') as HTMLSelectElement).value;
+        const area = (document.getElementById('area') as HTMLSelectElement).value as AreaTipo;
         const solicitante = (document.getElementById('solicitante') as HTMLInputElement).value.trim();
         const motivo = (document.getElementById('motivo') as HTMLTextAreaElement).value.trim();
 
@@ -635,14 +679,13 @@ export class InventarioComponent implements OnInit {
           cantidad,
           area,
           solicitante,
-          quienEntrega: usuarioActual, // Usamos el usuario actual directamente
+          quienEntrega: usuarioActual,
           motivo,
           hora: new Date().toLocaleTimeString()
         };
       }
     }).then((result) => {
       if (result.isConfirmed && result.value) {
-        // console.log('Datos a enviar:', result.value);
         this.inventarioService.agregarSalida(item._id!, result.value).subscribe({
           next: (response) => {
             if (response.status === 'success') {
@@ -656,7 +699,6 @@ export class InventarioComponent implements OnInit {
             }
           },
           error: (error) => {
-            // console.error('Error detallado:', error);
             Swal.fire({
               title: 'Error',
               text: error.error?.message || 'Error al registrar la salida',
@@ -667,5 +709,32 @@ export class InventarioComponent implements OnInit {
         });
       }
     });
+  }
+
+  // Métodos auxiliares para formatear valores de enumeraciones
+  formatTipoMaterial(tipo: string): string {
+    const formatMap: Record<string, string> = {
+      'oficina': 'Material de Oficina',
+      'limpieza': 'Material de Limpieza',
+      'varios': 'Varios'
+    };
+    return formatMap[tipo] || tipo;
+  }
+
+  formatUnidadMedida(unidad: string): string {
+    const formatMap: Record<string, string> = {
+      'pieza': 'Pieza',
+      'litro': 'Litro',
+      'kilogramo': 'Kilogramo',
+      'metro': 'Metro',
+      'gramo': 'Gramo',
+      'mililitro': 'Mililitro',
+      'unidad': 'Unidad',
+      'caja': 'Caja',
+      'paquete': 'Paquete',
+      'rollo': 'Rollo',
+      'otro': 'Otro'
+    };
+    return formatMap[unidad] || unidad;
   }
 }

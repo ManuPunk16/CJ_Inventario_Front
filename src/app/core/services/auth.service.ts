@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpInterceptor, HttpRequest, HttpHandler, HttpEvent, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { Observable, BehaviorSubject, throwError } from 'rxjs';
-import { tap, catchError, map } from 'rxjs/operators';
+import { tap, catchError, map, switchMap, filter, take } from 'rxjs/operators';
 import { environment } from '../../../environments/environments';
 import {
   LoginRequest,
@@ -77,7 +77,35 @@ export class AuthService {
   }
 
   isLoggedIn(): boolean {
-    return !!this.accessToken && !!this.userSubject.value;
+    const token = this.getAccessToken();
+    if (!token) return false;
+    
+    try {
+      // Verificar si el token ha expirado
+      const decodedToken = this.decodeToken(token);
+      const isExpired = this.isTokenExpired(token);
+      
+      return !isExpired;
+    } catch (error) {
+      console.error('Error al verificar el token:', error);
+      return false;
+    }
+  }
+
+  private decodeToken(token: string): any {
+    try {
+      return JSON.parse(atob(token.split('.')[1]));
+    } catch (e) {
+      return null;
+    }
+  }
+
+  private isTokenExpired(token: string): boolean {
+    const decoded = this.decodeToken(token);
+    if (!decoded) return true;
+    
+    const now = Date.now() / 1000;
+    return decoded.exp < now;
   }
 
   hasRole(role: string): boolean {
@@ -136,6 +164,63 @@ export class AuthService {
   private stopRefreshTokenTimer(): void {
     if (this.refreshTokenTimeout) {
       clearTimeout(this.refreshTokenTimeout);
+    }
+  }
+}
+
+@Injectable()
+export class TokenInterceptor implements HttpInterceptor {
+  private refreshTokenInProgress = false;
+  private refreshTokenSubject: BehaviorSubject<any> = new BehaviorSubject<any>(null);
+
+  constructor(private authService: AuthService) {}
+
+  intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+    return next.handle(this.addToken(request)).pipe(
+      catchError(error => {
+        if (error.status === 401 && error.error?.code === 'TOKEN_EXPIRED') {
+          return this.handle401Error(request, next);
+        }
+        return throwError(() => error);
+      })
+    );
+  }
+
+  private addToken(request: HttpRequest<any>): HttpRequest<any> {
+    const token = this.authService.getAccessToken();
+    if (token) {
+      return request.clone({
+        setHeaders: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+    }
+    return request;
+  }
+
+  private handle401Error(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+    if (!this.refreshTokenInProgress) {
+      this.refreshTokenInProgress = true;
+      this.refreshTokenSubject.next(null);
+
+      return this.authService.refreshAccessToken().pipe(
+        switchMap((token) => {
+          this.refreshTokenInProgress = false;
+          this.refreshTokenSubject.next(token);
+          return next.handle(this.addToken(request));
+        }),
+        catchError((err) => {
+          this.refreshTokenInProgress = false;
+          this.authService.logout();
+          return throwError(() => err);
+        })
+      );
+    } else {
+      return this.refreshTokenSubject.pipe(
+        filter(token => token != null),
+        take(1),
+        switchMap(() => next.handle(this.addToken(request)))
+      );
     }
   }
 }

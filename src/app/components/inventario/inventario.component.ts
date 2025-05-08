@@ -545,6 +545,20 @@ export class InventarioComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // Verificar que el token esté vigente antes de mostrar el diálogo
+    if (!this.authService.isLoggedIn()) {
+      Swal.fire({
+        title: 'Sesión expirada',
+        text: 'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.',
+        icon: 'warning',
+        confirmButtonColor: 'var(--primary-500)'
+      }).then(() => {
+        this.authService.logout();
+        this.router.navigate(['/login']);
+      });
+      return;
+    }
+
     Swal.fire({
       title: 'Agregar Entrada',
       html: `
@@ -589,11 +603,29 @@ export class InventarioComponent implements OnInit, OnDestroy {
     }).then((result) => {
       if (result.isConfirmed && result.value) {
         const entradaData = {
-          ...result.value,
-          registradoPor: this.currentUser // Ensure `registradoPor` is included
+          ...result.value
         };
+
+        // Agregar logging para depurar
+        console.log('Datos a enviar:', entradaData);
+        
+        // Verificar token activo
+        const token = this.authService.getAccessToken();
+        if (!token) {
+          Swal.fire({
+            title: 'Error',
+            text: 'No hay token de autenticación disponible',
+            icon: 'error',
+            confirmButtonColor: 'var(--primary-500)'
+          });
+          return;
+        }
+        
+        console.log('Token activo:', token.substring(0, 15) + '...');
+
         this.inventarioService.agregarEntrada(item._id!, entradaData).subscribe({
           next: (response) => {
+            console.log('Respuesta exitosa:', response);
             if (response.status === 'success') {
               Swal.fire({
                 title: '¡Éxito!',
@@ -605,12 +637,26 @@ export class InventarioComponent implements OnInit, OnDestroy {
             }
           },
           error: (error) => {
-            Swal.fire({
-              title: 'Error',
-              text: error.error?.message || 'Error al registrar la entrada',
-              icon: 'error',
-              confirmButtonColor: 'var(--primary-500)'
-            });
+            console.error('Error completo al agregar entrada:', error);
+            
+            if (error.status === 401) {
+              Swal.fire({
+                title: 'Sesión expirada',
+                text: 'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.',
+                icon: 'warning',
+                confirmButtonColor: 'var(--primary-500)'
+              }).then(() => {
+                this.authService.logout();
+                this.router.navigate(['/login']);
+              });
+            } else {
+              Swal.fire({
+                title: 'Error',
+                text: error.error?.message || 'Error al registrar la entrada',
+                icon: 'error',
+                confirmButtonColor: 'var(--primary-500)'
+              });
+            }
           }
         });
       }

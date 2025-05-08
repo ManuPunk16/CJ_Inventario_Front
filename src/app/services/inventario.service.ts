@@ -84,31 +84,68 @@ export class InventarioService {
 
   agregarEntrada(
     id: string,
-    entrada: Omit<Entrada, 'fecha'>
+    entrada: Omit<Entrada, 'fecha' | 'registradoPor' | '_id'>
   ): Observable<InventarioResponse> {
-    const token = localStorage.getItem('token');
-    const headers = new HttpHeaders({
-      Authorization: `Bearer ${token}`,
+    // Obtener token fresco
+    const token = this.authService.getAccessToken();
+    
+    if (!token) {
+      console.error('No hay token disponible');
+      return throwError(() => new Error('No hay token de autenticación'));
+    }
+    
+    const headers = new HttpHeaders()
+      .set('Authorization', `Bearer ${token}`)
+      .set('Content-Type', 'application/json');
+    
+    // Comprobar que los headers se establecen correctamente
+    console.log('Headers enviados:', {
+      Authorization: `Bearer ${token.substring(0, 15)}...`,
+      'Content-Type': 'application/json'
     });
+    
     return this.http.post<InventarioResponse>(
       `${this.apiUrl}/${id}/entradas`,
       entrada,
       { headers }
+    ).pipe(
+      tap(response => console.log('Respuesta del servidor:', response)),
+      catchError(error => {
+        console.error('Error detallado en la petición:', error);
+        
+        // Manejo específico de errores de autenticación
+        if (error.status === 401) {
+          // Intentar renovar el token si es posible
+          console.error('Token expirado o inválido. Intentando reautenticar...');
+          // Usar un método público para manejar la renovación del token o redirigir al login
+          this.authService.logout(); // O usar otro método público como handleTokenExpiration() si existe
+        }        
+        return throwError(() => error);
+      })
     );
   }
 
   agregarSalida(
     id: string,
-    salida: Omit<Salida, 'fecha'>
+    // Omit registradoPor para que el backend lo maneje
+    salida: Omit<Salida, 'fecha' | 'registradoPor' | '_id'>
   ): Observable<InventarioResponse> {
-    const token = localStorage.getItem('token');
+    const token = this.authService.getAccessToken();
+    
     const headers = new HttpHeaders({
-      Authorization: `Bearer ${token}`,
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
     });
+    
     return this.http.post<InventarioResponse>(
       `${this.apiUrl}/${id}/salidas`,
       salida,
       { headers }
+    ).pipe(
+      catchError(error => {
+        console.error('Error en la petición:', error);
+        return throwError(() => error);
+      })
     );
   }
 

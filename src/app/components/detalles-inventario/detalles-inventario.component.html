@@ -263,59 +263,124 @@
           <div class="p-4">
             <!-- Tab de Auditoría -->
             <div *ngIf="activeTabIndex === 0">
-              <div class="mb-4 flex justify-between items-center">
-                <h3 class="text-lg font-medium text-[var(--primary-900)]">Historial de Auditoría</h3>
-                <div class="text-sm text-gray-500">
-                  {{historialAuditoria.length}} registros encontrados
+              <div class="mb-4 flex flex-col space-y-3 md:space-y-0 md:flex-row md:justify-between md:items-center">
+                <div class="flex flex-wrap items-center">
+                  <h3 class="text-lg font-medium text-[var(--primary-900)] mr-3">Historial de Auditoría</h3>
+                  <span class="text-sm text-gray-500">
+                    {{auditoriaTotalItems}} {{ auditoriaTotalItems === 1 ? 'registro' : 'registros' }} encontrados
+                  </span>
+                </div>
+                
+                <!-- Filtros por período -->
+                <div class="flex flex-wrap gap-2">
+                  <button 
+                    class="px-3 py-1.5 text-xs rounded-full border flex items-center"
+                    [ngClass]="periodoFiltro === 'todos' ? 'bg-gray-800 text-white' : 'bg-white text-gray-600 hover:bg-gray-100'"
+                    (click)="filtrarHistorialPorPeriodo('todos')">
+                    <svg *ngIf="periodoFiltro === 'todos'" xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Todos
+                  </button>
+                  <button 
+                    class="px-3 py-1.5 text-xs rounded-full border flex items-center"
+                    [ngClass]="periodoFiltro === 'hoy' ? 'bg-gray-800 text-white' : 'bg-white text-gray-600 hover:bg-gray-100'"
+                    (click)="filtrarHistorialPorPeriodo('hoy')">
+                    <svg *ngIf="periodoFiltro === 'hoy'" xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Hoy
+                  </button>
+                  <button 
+                    class="px-3 py-1.5 text-xs rounded-full border flex items-center"
+                    [ngClass]="periodoFiltro === 'semana' ? 'bg-gray-800 text-white' : 'bg-white text-gray-600 hover:bg-gray-100'"
+                    (click)="filtrarHistorialPorPeriodo('semana')">
+                    <svg *ngIf="periodoFiltro === 'semana'" xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Última semana
+                  </button>
+                  <button 
+                    class="px-3 py-1.5 text-xs rounded-full border flex items-center"
+                    [ngClass]="periodoFiltro === 'mes' ? 'bg-gray-800 text-white' : 'bg-white text-gray-600 hover:bg-gray-100'"
+                    (click)="filtrarHistorialPorPeriodo('mes')">
+                    <svg *ngIf="periodoFiltro === 'mes'" xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Último mes
+                  </button>
                 </div>
               </div>
               
+              <!-- Agrupación por fechas -->
               <div class="border rounded-lg overflow-hidden">
-                <div *ngFor="let evento of historialAuditoria" class="border-b last:border-0 p-4">
-                  <div class="flex flex-wrap items-center mb-2">
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mr-2 mb-1"
-                          [ngClass]="{
-                            'bg-green-100 text-green-800': evento.tipo === 'CREACIÓN',
-                            'bg-blue-100 text-blue-800': evento.tipo === 'MODIFICACIÓN',
-                            'bg-purple-100 text-purple-800': evento.tipo === 'ENTRADA',
-                            'bg-orange-100 text-orange-800': evento.tipo === 'SALIDA'
-                          }">
-                      <svg *ngIf="evento.tipo === 'CREACIÓN'" xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                      </svg>
-                      <svg *ngIf="evento.tipo === 'MODIFICACIÓN'" xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                      </svg>
-                      <svg *ngIf="evento.tipo === 'ENTRADA'" xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                      </svg>
-                      <svg *ngIf="evento.tipo === 'SALIDA'" xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                      </svg>
-                      {{evento.tipo}}
-                    </span>
-                    <span class="text-gray-500 text-sm mb-1">
-                      {{evento.fecha | date:'dd/MM/yyyy HH:mm'}}
-                    </span>
+                <div *ngFor="let grupo of agruparHistorialPorFecha()" class="border-b last:border-0">
+                  <!-- Encabezado de fecha -->
+                  <div class="bg-gray-50 px-4 py-2 font-medium text-gray-700 flex justify-between items-center">
+                    <span>{{grupo.fecha | date:'EEEE, d MMMM yyyy'}}</span>
+                    <span class="text-xs text-gray-500">{{grupo.eventos.length}} {{ grupo.eventos.length === 1 ? 'evento' : 'eventos' }}</span>
                   </div>
-                  <div class="flex items-center mb-1 text-gray-700">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                    <span class="font-medium">{{evento.usuario}}</span>
-                  </div>
-                  <div class="text-gray-600 mt-1">
-                    {{evento.detalles}}
+                  
+                  <!-- Eventos del día -->
+                  <div *ngFor="let evento of grupo.eventos" class="p-4 border-t border-gray-100">
+                    <div class="flex flex-wrap items-center mb-2">
+                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mr-2 mb-1"
+                            [ngClass]="getTipoAuditoriaClass(evento.tipo)">
+                        <svg *ngIf="evento.tipo === 'CREACIÓN'" xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        <svg *ngIf="evento.tipo === 'MODIFICACIÓN'" xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                        </svg>
+                        <svg *ngIf="evento.tipo === 'ENTRADA'" xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                        </svg>
+                        <svg *ngIf="evento.tipo === 'SALIDA'" xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                        {{evento.tipo}}
+                      </span>
+                      <span class="text-gray-500 text-sm mb-1">
+                        {{evento.fecha | date:'HH:mm'}}
+                      </span>
+                    </div>
+                    <div class="flex items-center mb-1 text-gray-700">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                      <span class="font-medium">{{evento.usuario}}</span>
+                    </div>
+                    <div class="text-gray-600 mt-1">
+                      {{evento.detalles}}
+                    </div>
                   </div>
                 </div>
                 
-                <div *ngIf="historialAuditoria.length === 0" class="py-8 text-center text-gray-500">
+                <!-- Mensaje sin resultados -->
+                <div *ngIf="auditoriaFiltrada.length === 0" class="py-8 text-center text-gray-500">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto mb-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                   </svg>
-                  No hay registros de auditoría disponibles
+                  <p class="text-base font-medium">No hay registros de auditoría disponibles</p>
+                  <p *ngIf="periodoFiltro !== 'todos'" class="text-sm mt-1">Prueba a ampliar el periodo de búsqueda</p>
+                  <button *ngIf="periodoFiltro !== 'todos'" (click)="filtrarHistorialPorPeriodo('todos')" class="mt-3 px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors">
+                    Ver todos los registros
+                  </button>
                 </div>
               </div>
+              
+              <!-- Paginador -->
+              <mat-paginator 
+                *ngIf="auditoriaTotalItems > 0"
+                [length]="auditoriaTotalItems"
+                [pageSize]="auditoriaPageSize"
+                [pageSizeOptions]="[5, 10, 25, 50]"
+                [pageIndex]="auditoriaCurrentPage"
+                (page)="cambiarPaginaHistorial($event)"
+                showFirstLastButtons
+                aria-label="Seleccionar página de historial"
+                class="border-t-0 shadow-none mt-2">
+              </mat-paginator>
             </div>
             
             <!-- Tab de Entradas (Usando Angular Material para la tabla) -->

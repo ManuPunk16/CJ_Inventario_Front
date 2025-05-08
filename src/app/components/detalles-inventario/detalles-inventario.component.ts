@@ -88,6 +88,15 @@ export class DetallesInventarioComponent implements OnInit, OnDestroy, OnChanges
   entradasLoading = false;
   salidasLoading = false;
 
+  // Añadir propiedades para paginación del historial
+  auditoriaTotalItems = 0;
+  auditoriaCurrentPage = 0;
+  auditoriaPageSize = 10;
+  auditoriaFiltrada: any[] = [];
+
+  // Añadir propiedad para filtros por período
+  periodoFiltro: 'todos' | 'hoy' | 'semana' | 'mes' = 'todos';
+
   constructor(
     private inventarioService: InventarioService,
     private route: ActivatedRoute,
@@ -269,6 +278,84 @@ export class DetallesInventarioComponent implements OnInit, OnDestroy, OnChanges
       });
   }
 
+  // Método para agrupar por fechas
+  agruparHistorialPorFecha(): { fecha: string, eventos: any[] }[] {
+    const grupos: { [key: string]: any[] } = {};
+    
+    // Agrupar por fecha (solo día)
+    this.auditoriaFiltrada.forEach(evento => {
+      const fecha = new Date(evento.fecha).toISOString().split('T')[0];
+      if (!grupos[fecha]) {
+        grupos[fecha] = [];
+      }
+      grupos[fecha].push(evento);
+    });
+    
+    // Convertir a array ordenado por fecha (más recientes primero)
+    return Object.keys(grupos)
+      .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())
+      .map(fecha => {
+        return {
+          fecha: fecha,
+          eventos: grupos[fecha]
+        };
+      });
+  }
+
+  // Método para filtrar el historial por período
+  filtrarHistorialPorPeriodo(periodo: 'todos' | 'hoy' | 'semana' | 'mes'): void {
+    this.periodoFiltro = periodo;
+    
+    const ahora = new Date();
+    let fechaLimite = new Date();
+    
+    switch (periodo) {
+      case 'hoy':
+        fechaLimite.setHours(0, 0, 0, 0);
+        break;
+      case 'semana':
+        fechaLimite.setDate(fechaLimite.getDate() - 7);
+        break;
+      case 'mes':
+        fechaLimite.setMonth(fechaLimite.getMonth() - 1);
+        break;
+      default:
+        // No filtrar por fecha, mostrar todos
+        this.auditoriaFiltrada = [...this.historialAuditoria];
+        this.auditoriaTotalItems = this.historialAuditoria.length;
+        this.paginarHistorial();
+        return;
+    }
+    
+    // Filtrar eventos por fecha
+    const eventosFiltrados = this.historialAuditoria.filter(evento => {
+      const fechaEvento = new Date(evento.fecha);
+      return fechaEvento >= fechaLimite;
+    });
+    
+    this.auditoriaFiltrada = eventosFiltrados;
+    this.auditoriaTotalItems = eventosFiltrados.length;
+    this.auditoriaCurrentPage = 0;
+    this.paginarHistorial();
+  }
+
+  // Método para paginar el historial
+  paginarHistorial(): void {
+    const start = this.auditoriaCurrentPage * this.auditoriaPageSize;
+    const end = start + this.auditoriaPageSize;
+    
+    // No modificamos this.auditoriaFiltrada aquí para mantener el conjunto completo
+    // para la agrupación por fecha, solo aplicamos paginación al mostrar los elementos
+  }
+
+  // Método para cambiar página
+  cambiarPaginaHistorial(event: any): void {
+    this.auditoriaCurrentPage = event.pageIndex;
+    this.auditoriaPageSize = event.pageSize;
+    this.paginarHistorial();
+  }
+
+  // Sobrescribir el método construirHistorialAuditoria
   construirHistorialAuditoria(): void {
     if (!this.item) return;
     
@@ -332,6 +419,9 @@ export class DetallesInventarioComponent implements OnInit, OnDestroy, OnChanges
     
     // Ordenar por fecha (más recientes primero)
     this.historialAuditoria.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
+    
+    // Inicializar filtro y paginación
+    this.filtrarHistorialPorPeriodo('todos');
   }
 
   // Modificar el método de filtrado para entradas

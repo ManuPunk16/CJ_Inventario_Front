@@ -359,9 +359,9 @@
                     <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-gray-50 text-gray-700">Proveedor</th>
                     <td mat-cell *matCellDef="let entrada">{{entrada.proveedor || '-'}}</td>
                   </ng-container>
-                  
+
                   <!-- Ubicación -->
-                  <ng-container matColumnDef="ubicacion">
+                  <!-- <ng-container matColumnDef="ubicacion">
                     <th mat-header-cell *matHeaderCellDef class="bg-gray-50 text-gray-700">Ubicación</th>
                     <td mat-cell *matCellDef="let entrada">
                       <div *ngIf="entrada.ubicacionAnterior && entrada.ubicacionNueva" class="text-xs">
@@ -374,7 +374,7 @@
                       </div>
                       <span *ngIf="!entrada.ubicacionAnterior || !entrada.ubicacionNueva">-</span>
                     </td>
-                  </ng-container>
+                  </ng-container> -->
                   
                   <!-- Registrado Por -->
                   <ng-container matColumnDef="registradoPor">
@@ -476,10 +476,10 @@
                     <td mat-cell *matCellDef="let salida">{{salida.solicitante}}</td>
                   </ng-container>
                   
-                  <!-- Quien Entrega -->
-                  <ng-container matColumnDef="quienEntrega">
-                    <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-gray-50 text-gray-700">Entregado por</th>
-                    <td mat-cell *matCellDef="let salida">{{salida.quienEntrega}}</td>
+                  <!-- Motivo -->
+                  <ng-container matColumnDef="motivo">
+                    <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-gray-50 text-gray-700">Motivo</th>
+                    <td mat-cell *matCellDef="let salida">{{salida.motivo || '-'}}</td>
                   </ng-container>
                   
                   <!-- Registrado Por -->

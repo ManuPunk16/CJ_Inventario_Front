@@ -50,13 +50,13 @@ export class DetallesInventarioComponent implements OnInit, OnDestroy {
   error = '';
   
   // Entradas configuración
-  displayedColumnsEntradas = ['fecha', 'cantidad', 'proveedor', 'ubicacion', 'registradoPor'];
+  displayedColumnsEntradas = ['fecha', 'cantidad', 'proveedor', 'registradoPor'];
   entradasDataSource = new MatTableDataSource<Entrada>([]);
   @ViewChild('entradasPaginator') entradasPaginator!: MatPaginator;
   @ViewChild('entradasSort') entradasSort!: MatSort;
   
   // Salidas configuración
-  displayedColumnsSalidas = ['fecha', 'cantidad', 'area', 'solicitante', 'quienEntrega', 'registradoPor'];
+  displayedColumnsSalidas = ['fecha', 'cantidad', 'area', 'solicitante', 'motivo', 'registradoPor'];
   salidasDataSource = new MatTableDataSource<Salida>([]);
   @ViewChild('salidasPaginator') salidasPaginator!: MatPaginator;
   @ViewChild('salidasSort') salidasSort!: MatSort;

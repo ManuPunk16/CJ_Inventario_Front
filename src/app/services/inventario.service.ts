@@ -13,6 +13,15 @@ import {
 import { tap, catchError } from 'rxjs/operators';
 import { AuthService } from '../core/services/auth.service';
 
+export interface PaginatedResults<T> {
+  status: string;
+  data: T[];
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -172,5 +181,51 @@ export class InventarioService {
           return throwError(() => error);
         })
       );
+  }
+
+  // Agregar console.log para depuración
+  getEntradasPaginadas(id: string, options: {
+    page?: number,
+    pageSize?: number,
+    sortField?: string,
+    sortOrder?: 'asc' | 'desc',
+    search?: string
+  }): Observable<PaginatedResults<Entrada>> {
+    const { page = 0, pageSize = 10, sortField = 'fecha', sortOrder = 'desc', search = '' } = options;
+    const params = new HttpParams()
+      .set('page', page.toString())
+      .set('pageSize', pageSize.toString())
+      .set('sortField', sortField)
+      .set('sortOrder', sortOrder)
+      .set('search', search);
+
+    console.log('Solicitando entradas con parámetros:', params.toString());
+    console.log('URL de solicitud:', `${this.apiUrl}/${id}/entradas`);
+    
+    return this.http.get<PaginatedResults<Entrada>>(`${this.apiUrl}/${id}/entradas`, { params }).pipe(
+      tap(response => console.log('Respuesta de entradas:', response)),
+      catchError(error => {
+        console.error('Error al obtener entradas:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  getSalidasPaginadas(id: string, options: {
+    page?: number,
+    pageSize?: number,
+    sortField?: string,
+    sortOrder?: 'asc' | 'desc',
+    search?: string
+  }): Observable<PaginatedResults<Salida>> {
+    const { page = 0, pageSize = 10, sortField = 'fecha', sortOrder = 'desc', search = '' } = options;
+    const params = new HttpParams()
+      .set('page', page.toString())
+      .set('pageSize', pageSize.toString())
+      .set('sortField', sortField)
+      .set('sortOrder', sortOrder)
+      .set('search', search);
+
+    return this.http.get<PaginatedResults<Salida>>(`${this.apiUrl}/${id}/salidas`, { params });
   }
 }

@@ -220,7 +220,7 @@
               </div>
               <div *ngIf="item.stockMinimo! > 0 && item.cantidad > item.stockMinimo! * 2" class="flex items-center text-green-700">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 Nivel de stock óptimo
               </div>
@@ -321,7 +321,15 @@
             <!-- Tab de Entradas (Usando Angular Material para la tabla) -->
             <div *ngIf="activeTabIndex === 1">
               <div class="mb-4 flex flex-col md:flex-row md:justify-between md:items-center">
-                <h3 class="text-lg font-medium text-[var(--primary-900)] mb-2 md:mb-0">Registro de Entradas</h3>
+                <div class="flex items-center">
+                  <h3 class="text-lg font-medium text-[var(--primary-900)] mb-2 md:mb-0">Registro de Entradas</h3>
+                  <!-- Indicador de carga pequeño -->
+                  <div *ngIf="entradasLoading" class="ml-3 inline-block h-4 w-4 animate-spin rounded-full border-2 border-[var(--primary-500)] border-t-transparent"></div>
+                  <!-- Contador de registros -->
+                  <span *ngIf="!entradasLoading && entradasTotalItems > 0" class="ml-3 text-sm text-gray-500">
+                    {{entradasTotalItems}} {{ entradasTotalItems === 1 ? 'registro' : 'registros' }}
+                  </span>
+                </div>
                 
                 <div class="relative">
                   <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -332,26 +340,52 @@
                   <input 
                     type="text" 
                     (keyup)="aplicarFiltroEntradas($event)" 
-                    placeholder="Buscar..." 
+                    placeholder="Buscar por proveedor, usuario..." 
                     #inputEntradas
-                    class="block w-full md:w-64 pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:border-[var(--primary-500)] focus:ring-1 focus:ring-[var(--primary-500)] transition duration-150 ease-in-out sm:text-sm"
+                    class="block w-full md:w-64 pl-10 pr-9 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:border-[var(--primary-500)] focus:ring-1 focus:ring-[var(--primary-500)] transition duration-150 ease-in-out sm:text-sm"
                   >
+                  <!-- Botón para limpiar búsqueda -->
+                  <button *ngIf="entradasFilterValue" 
+                          (click)="limpiarFiltroEntradas()" 
+                          class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
                 </div>
               </div>
               
-              <div class="overflow-x-auto rounded-lg border">
+              <!-- Indicador de carga principal -->
+              <div *ngIf="entradasLoading" class="flex justify-center items-center py-8">
+                <div class="inline-block h-8 w-8 animate-spin rounded-full border-4 border-[var(--primary-500)] border-t-transparent"></div>
+                <p class="ml-2 text-gray-600">Cargando entradas...</p>
+              </div>
+              
+              <div class="overflow-x-auto rounded-lg border" [hidden]="entradasLoading">
+                <!-- Tabla de entradas existente... -->
                 <table mat-table [dataSource]="entradasDataSource" matSort #entradasSort="matSort" class="w-full whitespace-nowrap">
+                  <!-- Columnas existentes... -->
                   
-                  <!-- Fecha -->
+                  <!-- Fecha - Cambiar el formato para que sea más legible -->
                   <ng-container matColumnDef="fecha">
                     <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-gray-50 text-gray-700">Fecha</th>
-                    <td mat-cell *matCellDef="let entrada">{{entrada.fecha | date:'dd/MM/yyyy HH:mm'}}</td>
+                    <td mat-cell *matCellDef="let entrada">
+                      <div class="font-medium">{{entrada.fecha | date:'dd/MM/yyyy'}}</div>
+                      <div class="text-xs text-gray-500">{{entrada.fecha | date:'HH:mm'}}</div>
+                    </td>
                   </ng-container>
                   
-                  <!-- Cantidad -->
+                  <!-- Cantidad - Agregar un estilo más visual -->
                   <ng-container matColumnDef="cantidad">
                     <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-gray-50 text-gray-700">Cantidad</th>
-                    <td mat-cell *matCellDef="let entrada" class="font-medium text-green-600">+{{entrada.cantidad}}</td>
+                    <td mat-cell *matCellDef="let entrada" class="font-medium text-green-600">
+                      <div class="flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        {{entrada.cantidad}}
+                      </div>
+                    </td>
                   </ng-container>
                   
                   <!-- Proveedor -->
@@ -380,7 +414,9 @@
                   <ng-container matColumnDef="registradoPor">
                     <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-gray-50 text-gray-700">Registrado por</th>
                     <td mat-cell *matCellDef="let entrada">
-                      <div class="flex items-center">
+                      <div class="flex items-center" 
+                           matTooltip="Entrada registrada el {{entrada.fecha | date:'dd/MM/yyyy HH:mm'}}"
+                           matTooltipPosition="above">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                         </svg>
@@ -412,11 +448,21 @@
                 </table>
               </div>
               
+              <!-- Mostrar contador de registros debajo de la tabla -->
+              <div *ngIf="!entradasLoading && entradasDataSource.data.length > 0" class="text-xs text-gray-500 mt-2 mb-2 pl-2">
+                Mostrando {{entradasDataSource.data.length}} de {{entradasTotalItems}} registros
+              </div>
+              
+              <!-- Paginador -->
               <mat-paginator #entradasPaginator
-                             [pageSizeOptions]="[5, 10, 25, 100]"
-                             showFirstLastButtons
-                             aria-label="Seleccionar página de entradas"
-                             class="border-t-0 shadow-none">
+                [length]="entradasTotalItems"
+                [pageSize]="entradasPageSize"
+                [pageSizeOptions]="[5, 10, 25, 100]"
+                [pageIndex]="entradasCurrentPage"
+                showFirstLastButtons
+                aria-label="Seleccionar página de entradas"
+                class="border-t-0 shadow-none"
+                [disabled]="entradasLoading">
               </mat-paginator>
             </div>
             
@@ -477,10 +523,10 @@
                   </ng-container>
                   
                   <!-- Motivo -->
-                  <ng-container matColumnDef="motivo">
+                  <!-- <ng-container matColumnDef="motivo">
                     <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-gray-50 text-gray-700">Motivo</th>
                     <td mat-cell *matCellDef="let salida">{{salida.motivo || '-'}}</td>
-                  </ng-container>
+                  </ng-container> -->
                   
                   <!-- Registrado Por -->
                   <ng-container matColumnDef="registradoPor">
@@ -519,10 +565,13 @@
               </div>
               
               <mat-paginator #salidasPaginator
-                             [pageSizeOptions]="[5, 10, 25, 100]"
-                             showFirstLastButtons
-                             aria-label="Seleccionar página de salidas"
-                             class="border-t-0 shadow-none">
+                [length]="salidasTotalItems"
+                [pageSize]="salidasPageSize"
+                [pageSizeOptions]="[5, 10, 25, 100]"
+                [pageIndex]="salidasCurrentPage"
+                showFirstLastButtons
+                aria-label="Seleccionar página de salidas"
+                class="border-t-0 shadow-none">
               </mat-paginator>
             </div>
           </div>

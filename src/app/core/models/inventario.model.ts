@@ -3,29 +3,38 @@ export interface Usuario {
   username: string;
 }
 
+export interface Auditoria {
+  usuario: Usuario;
+  fecha: Date;
+}
+
 export interface Ubicacion {
-  edificio: string; // ADM o TI
+  edificio: string; // 'ADM' o 'TI'
   anaquel: string;
   nivel: number;
   observaciones?: string;
 }
 
 export interface Entrada {
+  _id?: string;
   fecha: Date;
   cantidad: number;
   proveedor?: string;
   ubicacionAnterior?: Ubicacion;
   ubicacionNueva?: Ubicacion;
+  registradoPor: Auditoria;
 }
 
 export interface Salida {
+  _id?: string;
   fecha: Date;
   hora: string;
   cantidad: number;
   motivo?: string;
-  area: AreaTipo;
+  area: string;
   solicitante: string;
   quienEntrega: string;
+  registradoPor: Auditoria;
 }
 
 export type TipoMaterial = 'oficina' | 'limpieza' | 'varios';
@@ -67,10 +76,9 @@ export interface Inventario {
   precioUnitario?: number;
   stockMinimo?: number;
   ubicacion: Ubicacion;
-  codigoUbicacion?: {
-    type: String,
-    required: true
-  };
+  codigoUbicacion?: string;
+  creador: Auditoria;
+  ultimaModificacion?: Auditoria;
   entradas?: Entrada[];
   salidas?: Salida[];
   fechaCreacion?: Date;

@@ -119,4 +119,21 @@ export class InventarioService {
     });
     return this.http.get<InventarioResponse>(`${this.apiUrl}/${id}`, { headers });
   }
+
+  getAuditoriaInventario(id: string): Observable<any> {
+    const token = this.authService.getAccessToken();
+    
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    });
+    
+    return this.http.get<any>(`${this.apiUrl}/${id}/auditoria`, { headers })
+      .pipe(
+        catchError(error => {
+          console.error('Error al obtener auditoría:', error);
+          return throwError(() => error);
+        })
+      );
+  }
 }

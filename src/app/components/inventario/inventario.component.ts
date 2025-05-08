@@ -12,7 +12,7 @@ import { MatDialogModule } from '@angular/material/dialog';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Router } from '@angular/router';
 import { InventarioService } from '../../services/inventario.service';
-import { Inventario, AreaTipo } from '../../core/models/inventario.model';
+import { Inventario, AreaTipo, Salida } from '../../core/models/inventario.model';
 import { AuthService } from '../../core/services/auth.service';
 import { 
   AREAS, 
@@ -588,7 +588,11 @@ export class InventarioComponent implements OnInit, OnDestroy {
       }
     }).then((result) => {
       if (result.isConfirmed && result.value) {
-        this.inventarioService.agregarEntrada(item._id!, result.value).subscribe({
+        const entradaData = {
+          ...result.value,
+          registradoPor: this.currentUser // Ensure `registradoPor` is included
+        };
+        this.inventarioService.agregarEntrada(item._id!, entradaData).subscribe({
           next: (response) => {
             if (response.status === 'success') {
               Swal.fire({
@@ -705,7 +709,14 @@ export class InventarioComponent implements OnInit, OnDestroy {
       }
     }).then((result) => {
       if (result.isConfirmed && result.value) {
-        this.inventarioService.agregarSalida(item._id!, result.value).subscribe({
+        // Definir el objeto de salida para enviarlo al backend
+        // El backend se encargará de agregar la información de registradoPor
+        const salidaData = {
+          ...result.value,
+          registradoPor: this.currentUser // Ensure `registradoPor` is included
+        } as Omit<Salida, 'fecha'>;
+
+        this.inventarioService.agregarSalida(item._id!, salidaData).subscribe({
           next: (response) => {
             if (response.status === 'success') {
               Swal.fire({

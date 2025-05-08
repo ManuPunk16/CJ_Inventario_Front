@@ -187,6 +187,12 @@ export class InventarioComponent implements OnInit, OnDestroy {
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700">
+              Precio Unitario
+            </label>
+            <input id="precioUnitario" type="number" value="${item.precioUnitario || 0}" min="0" step="0.01" class="mt-1 block w-full p-2 border rounded-md focus:border-[var(--primary-500)] focus:ring-[var(--primary-500)]" placeholder="0.00">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">
               Anaquel <span class="text-red-500">*</span>
             </label>
             <input id="anaquel" type="text" value="${item.ubicacion.anaquel}" class="mt-1 block w-full p-2 border rounded-md focus:border-[var(--primary-500)] focus:ring-[var(--primary-500)]">
@@ -241,6 +247,7 @@ export class InventarioComponent implements OnInit, OnDestroy {
         }
 
         valores['stockMinimo'] = parseInt((document.getElementById('stockMinimo') as HTMLInputElement).value) || 0;
+        valores['precioUnitario'] = parseFloat((document.getElementById('precioUnitario') as HTMLInputElement).value) || 0;
 
         // Crear el objeto de ubicación
         valores['ubicacion'] = {
@@ -339,6 +346,10 @@ export class InventarioComponent implements OnInit, OnDestroy {
           <div>
             <label class="block text-sm font-medium text-gray-700">Stock Mínimo</label>
             <input id="stockMinimo" type="number" min="0" class="mt-1 block w-full p-2 border rounded-md focus:border-[var(--primary-500)] focus:ring-[var(--primary-500)]">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Precio Unitario</label>
+            <input id="precioUnitario" type="number" min="0" step="0.01" class="mt-1 block w-full p-2 border rounded-md focus:border-[var(--primary-500)] focus:ring-[var(--primary-500)]" placeholder="0.00">
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700">
@@ -443,6 +454,7 @@ export class InventarioComponent implements OnInit, OnDestroy {
           cantidad: parseInt((document.getElementById('cantidad') as HTMLInputElement).value),
           unidadMedida: (document.getElementById('unidadMedida') as HTMLSelectElement).value,
           stockMinimo: parseInt((document.getElementById('stockMinimo') as HTMLInputElement).value) || 0,
+          precioUnitario: parseFloat((document.getElementById('precioUnitario') as HTMLInputElement).value) || 0,
           ubicacion: {
             edificio: (document.getElementById('edificio') as HTMLSelectElement).value,
             anaquel: (document.getElementById('anaquel') as HTMLInputElement).value.trim().toUpperCase(),

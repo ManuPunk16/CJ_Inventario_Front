@@ -44,11 +44,12 @@ export class InventarioService {
       'Content-Type': 'application/json'
     });
     
-    console.log('Enviando datos al servidor:', inventario);
+    // Eliminar codigoUbicacion si existe para que el backend lo genere
+    const datosParaEnviar = { ...inventario };
+    delete datosParaEnviar.codigoUbicacion;
     
-    return this.http.post<InventarioResponse>(this.apiUrl, inventario, { headers })
+    return this.http.post<InventarioResponse>(this.apiUrl, datosParaEnviar, { headers })
       .pipe(
-        tap(response => console.log('Respuesta del servidor:', response)),
         catchError(error => {
           console.error('Error en la petición:', error);
           return throwError(() => error);

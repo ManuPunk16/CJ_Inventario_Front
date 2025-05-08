@@ -436,21 +436,17 @@ export class InventarioComponent implements OnInit, OnDestroy {
         const anaquel = (document.getElementById('anaquel') as HTMLInputElement).value.trim().toUpperCase();
         const nivel = parseInt((document.getElementById('nivel') as HTMLInputElement).value);
         
-        // Generar timestamp para el código
-        const shortTimestamp = Date.now().toString().slice(-4);
-        
-        // Construir el objeto a enviar con el código de ubicación
+        // Construir directamente el objeto a enviar sin incluir codigoUbicacion
         return {
           tipoMaterial: (document.getElementById('tipoMaterial') as HTMLSelectElement).value,
           nombre: (document.getElementById('nombre') as HTMLInputElement).value.trim(),
           cantidad: parseInt((document.getElementById('cantidad') as HTMLInputElement).value),
           unidadMedida: (document.getElementById('unidadMedida') as HTMLSelectElement).value,
           stockMinimo: parseInt((document.getElementById('stockMinimo') as HTMLInputElement).value) || 0,
-          codigoUbicacion: `${edificio}-A${anaquel}-N${nivel}-${shortTimestamp}`,
           ubicacion: {
-            edificio: edificio,
-            anaquel: anaquel,
-            nivel: nivel,
+            edificio: (document.getElementById('edificio') as HTMLSelectElement).value,
+            anaquel: (document.getElementById('anaquel') as HTMLInputElement).value.trim().toUpperCase(),
+            nivel: parseInt((document.getElementById('nivel') as HTMLInputElement).value),
             observaciones: (document.getElementById('observaciones') as HTMLTextAreaElement).value.trim() || ''
           }
         };

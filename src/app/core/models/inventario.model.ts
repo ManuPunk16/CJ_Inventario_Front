@@ -67,7 +67,7 @@ export interface Inventario {
   precioUnitario?: number;
   stockMinimo?: number;
   ubicacion: Ubicacion;
-  codigoUbicacion: {
+  codigoUbicacion?: {
     type: String,
     required: true
   };

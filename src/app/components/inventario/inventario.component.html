@@ -70,7 +70,11 @@
           <!-- Código de Ubicación -->
           <ng-container matColumnDef="codigoUbicacion">
             <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-gray-50 py-4"> Código </th>
-            <td mat-cell *matCellDef="let row" class="py-3 font-mono text-sm"> {{row.codigoUbicacion}} </td>
+            <td mat-cell *matCellDef="let row" class="py-3 font-mono text-sm">
+              <span [ngClass]="{'text-blue-600': row.ubicacion.edificio === 'TI', 'text-green-600': row.ubicacion.edificio === 'ADM'}">
+                {{row.codigoUbicacion}}
+              </span>
+            </td>
           </ng-container>
 
           <!-- Tipo de Material -->
@@ -104,8 +108,9 @@
           <ng-container matColumnDef="ubicacion">
             <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-gray-50 py-4"> Ubicación </th>
             <td mat-cell *matCellDef="let row" class="py-3">
-              <span class="px-2 py-1 bg-gray-100 rounded-md text-sm">
-                A: {{row.ubicacion.anaquel}} - N: {{row.ubicacion.nivel}}
+              <span class="px-2 py-1 rounded-md text-sm" 
+                    [ngClass]="{'bg-blue-100': row.ubicacion.edificio === 'TI', 'bg-green-100': row.ubicacion.edificio === 'ADM'}">
+                {{row.ubicacion.edificio}}: A{{row.ubicacion.anaquel}} - N{{row.ubicacion.nivel}}
               </span>
             </td>
           </ng-container>

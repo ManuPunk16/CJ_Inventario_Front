@@ -199,6 +199,17 @@ export class InventarioComponent implements OnInit, OnDestroy {
             <input id="nivel" type="number" value="${item.ubicacion.nivel}" min="1" class="mt-1 block w-full p-2 border rounded-md focus:border-[var(--primary-500)] focus:ring-[var(--primary-500)]">
             <span id="nivel-error" class="text-red-500 text-xs hidden">Campo requerido</span>
           </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">
+              Ubicación Física <span class="text-red-500">*</span>
+            </label>
+            <select id="edificio" class="mt-1 block w-full p-2 border rounded-md focus:border-[var(--primary-500)] focus:ring-[var(--primary-500)]">
+              <option value="">Seleccione ubicación</option>
+              <option value="ADM" ${item.ubicacion.edificio === 'ADM' ? 'selected' : ''}>Administración</option>
+              <option value="TI" ${item.ubicacion.edificio === 'TI' ? 'selected' : ''}>Tecnologías de la Información</option>
+            </select>
+            <span id="edificio-error" class="text-red-500 text-xs hidden">Campo requerido</span>
+          </div>
         </div>
       `,
       showCancelButton: true,
@@ -208,7 +219,7 @@ export class InventarioComponent implements OnInit, OnDestroy {
       cancelButtonColor: 'var(--gray-500)',
       preConfirm: () => {
         const valores: { [key: string]: any } = {};
-        const camposRequeridos = ['tipoMaterial', 'nombre', 'anaquel', 'nivel'];
+        const camposRequeridos = ['tipoMaterial', 'nombre', 'edificio', 'anaquel', 'nivel'];
         const errores: string[] = [];
 
         camposRequeridos.forEach(campo => {
@@ -233,11 +244,13 @@ export class InventarioComponent implements OnInit, OnDestroy {
 
         // Crear el objeto de ubicación
         valores['ubicacion'] = {
+          edificio: valores['edificio'],
           anaquel: valores['anaquel'].toUpperCase(),
           nivel: parseInt(valores['nivel'])
         };
 
         // Eliminar propiedades redundantes
+        delete valores['edificio'];
         delete valores['anaquel'];
         delete valores['nivel'];
 
@@ -329,6 +342,17 @@ export class InventarioComponent implements OnInit, OnDestroy {
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700">
+              Ubicación Física <span class="text-red-500">*</span>
+            </label>
+            <select id="edificio" class="mt-1 block w-full p-2 border rounded-md focus:border-[var(--primary-500)] focus:ring-[var(--primary-500)]">
+              <option value="">Seleccione ubicación</option>
+              <option value="ADM">Administración</option>
+              <option value="TI">Tecnologías de la Información</option>
+            </select>
+            <span id="edificio-error" class="text-red-500 text-xs hidden">Campo requerido</span>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">
               Anaquel <span class="text-red-500">*</span>
             </label>
             <input id="anaquel" type="text" class="mt-1 block w-full p-2 border rounded-md focus:border-[var(--primary-500)] focus:ring-[var(--primary-500)]">
@@ -384,65 +408,57 @@ export class InventarioComponent implements OnInit, OnDestroy {
           { id: 'nombre', nombre: 'Nombre' },
           { id: 'cantidad', nombre: 'Cantidad' },
           { id: 'unidadMedida', nombre: 'Unidad de Medida' },
+          { id: 'edificio', nombre: 'Ubicación Física' },
           { id: 'anaquel', nombre: 'Anaquel' },
           { id: 'nivel', nombre: 'Nivel' }
         ];
 
         const errores: string[] = [];
-        const valores: { [key: string]: any } = {};
-
-        camposRequeridos.forEach(campo => {
-          const elemento = document.getElementById(campo.id);
-          const errorSpan = document.getElementById(`${campo.id}-error`);
-
-          if (elemento instanceof HTMLSelectElement || elemento instanceof HTMLInputElement) {
-            const valor = elemento.value.trim();
-            valores[campo.id] = valor;
-
-            if (!valor) {
-              elemento.classList.add('border-red-500');
-              if (errorSpan) errorSpan.classList.remove('hidden');
-              errores.push(`El campo ${campo.nombre} es requerido`);
-            } else {
-              elemento.classList.remove('border-red-500');
-              if (errorSpan) errorSpan.classList.add('hidden');
-            }
+        
+        // Verificar campos requeridos
+        for (const campo of camposRequeridos) {
+          const elemento = document.getElementById(campo.id) as HTMLInputElement | HTMLSelectElement;
+          if (!elemento?.value.trim()) {
+            errores.push(`El campo ${campo.nombre} es requerido`);
+            elemento.classList.add('border-red-500');
+            const errorSpan = document.getElementById(`${campo.id}-error`);
+            if (errorSpan) errorSpan.classList.remove('hidden');
           }
-        });
+        }
 
         if (errores.length > 0) {
           Swal.showValidationMessage(errores.join('<br>'));
           return false;
         }
 
-        // Convertir valores numéricos
-        valores['cantidad'] = parseInt(valores['cantidad']);
-        valores['nivel'] = parseInt(valores['nivel']);
-        valores['stockMinimo'] = parseInt((document.getElementById('stockMinimo') as HTMLInputElement).value) || 0;
-        valores['observaciones'] = (document.getElementById('observaciones') as HTMLTextAreaElement).value.trim();
-
-        // Modificamos la generación del código de ubicación para incluir más información
-        const anaquel = valores['anaquel'].toUpperCase();
-        const nivel = valores['nivel'];
+        // Obtener datos de los campos
+        const edificio = (document.getElementById('edificio') as HTMLSelectElement).value;
+        const anaquel = (document.getElementById('anaquel') as HTMLInputElement).value.trim().toUpperCase();
+        const nivel = parseInt((document.getElementById('nivel') as HTMLInputElement).value);
+        
+        // Generar timestamp para el código
         const shortTimestamp = Date.now().toString().slice(-4);
-        valores['codigoUbicacion'] = `A${anaquel}-N${nivel}-${shortTimestamp}`;
-
-        // Crear el objeto de ubicación
-        valores['ubicacion'] = {
-          anaquel: valores['anaquel'],
-          nivel: valores['nivel'],
-          observaciones: valores['observaciones']
+        
+        // Construir el objeto a enviar con el código de ubicación
+        return {
+          tipoMaterial: (document.getElementById('tipoMaterial') as HTMLSelectElement).value,
+          nombre: (document.getElementById('nombre') as HTMLInputElement).value.trim(),
+          cantidad: parseInt((document.getElementById('cantidad') as HTMLInputElement).value),
+          unidadMedida: (document.getElementById('unidadMedida') as HTMLSelectElement).value,
+          stockMinimo: parseInt((document.getElementById('stockMinimo') as HTMLInputElement).value) || 0,
+          codigoUbicacion: `${edificio}-A${anaquel}-N${nivel}-${shortTimestamp}`,
+          ubicacion: {
+            edificio: edificio,
+            anaquel: anaquel,
+            nivel: nivel,
+            observaciones: (document.getElementById('observaciones') as HTMLTextAreaElement).value.trim() || ''
+          }
         };
-
-        // Eliminar propiedades redundantes
-        delete valores['anaquel'];
-        delete valores['observaciones'];
-
-        return valores;
       }
     }).then((result) => {
       if (result.isConfirmed && result.value) {
-        const nuevoInventario: Omit<Inventario, '_id'> = result.value as Omit<Inventario, '_id'>;
+        const nuevoInventario: Omit<Inventario, '_id'> = result.value as unknown as Omit<Inventario, '_id'>;
+        // En el método nuevoItem, modifica la parte del subscribe para incluir más logging
         this.inventarioService.crearInventario(nuevoInventario).subscribe({
           next: (response) => {
             if (response.status === 'success') {
@@ -456,9 +472,16 @@ export class InventarioComponent implements OnInit, OnDestroy {
             }
           },
           error: (error) => {
+            // Logging detallado del error
+            console.error('Error completo:', error);
+            console.error('Respuesta del servidor:', error.error);
+            console.error('Mensaje:', error.message);
+            console.error('Estado:', error.status);
+            
+            // Mensaje más informativo para el usuario
             Swal.fire({
               title: 'Error',
-              text: error.error?.message || 'Error al crear el item',
+              text: error.error?.message || `Error al crear el item (${error.status})`,
               icon: 'error',
               confirmButtonColor: 'var(--primary-500)'
             });

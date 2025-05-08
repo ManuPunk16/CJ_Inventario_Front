@@ -4,6 +4,7 @@ export interface Usuario {
 }
 
 export interface Ubicacion {
+  edificio: string; // ADM o TI
   anaquel: string;
   nivel: number;
   observaciones?: string;
@@ -58,19 +59,22 @@ export type AreaTipo =
 
 export interface Inventario {
   _id?: string;
-  tipoMaterial: TipoMaterial;
+  tipoMaterial: string;
   nombre: string;
   descripcion?: string;
   cantidad: number;
-  unidadMedida: UnidadMedida;
-  precioUnitario: number;
-  stockMinimo: number;
+  unidadMedida: string;
+  precioUnitario?: number;
+  stockMinimo?: number;
   ubicacion: Ubicacion;
-  codigoUbicacion: string;
-  entradas: Entrada[];
-  salidas: Salida[];
-  fechaCreacion: Date;
-  fechaActualizacion: Date;
+  codigoUbicacion: {
+    type: String,
+    required: true
+  };
+  entradas?: Entrada[];
+  salidas?: Salida[];
+  fechaCreacion?: Date;
+  fechaActualizacion?: Date;
 }
 
 // Interfaces para las respuestas de la API

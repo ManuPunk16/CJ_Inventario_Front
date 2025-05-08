@@ -10,6 +10,8 @@ import {
   Entrada,
   ApiResponse,
 } from '../core/models/inventario.model';
+import { tap, catchError } from 'rxjs/operators';
+import { AuthService } from '../core/services/auth.service';
 
 @Injectable({
   providedIn: 'root',
@@ -17,7 +19,7 @@ import {
 export class InventarioService {
   private apiUrl = environment.apiUrl + '/inventario';
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private authService: AuthService) {}
 
   getInventario(page: number = 0, pageSize: number = 10): Observable<InventariosResponse> {
     const params = new HttpParams()
@@ -34,18 +36,24 @@ export class InventarioService {
 
   // inventario.service.ts
   crearInventario(inventario: Omit<Inventario, '_id'>): Observable<InventarioResponse> {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      // Manejar el caso de no tener token
-      return throwError(() => new Error('No hay token de autenticación'));
-    }
-
+    // Obtén el token actual usando el servicio de autenticación
+    const token = this.authService.getAccessToken();
+    
     const headers = new HttpHeaders({
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json'
     });
-
-    return this.http.post<InventarioResponse>(this.apiUrl, inventario, { headers });
+    
+    console.log('Enviando datos al servidor:', inventario);
+    
+    return this.http.post<InventarioResponse>(this.apiUrl, inventario, { headers })
+      .pipe(
+        tap(response => console.log('Respuesta del servidor:', response)),
+        catchError(error => {
+          console.error('Error en la petición:', error);
+          return throwError(() => error);
+        })
+      );
   }
 
   actualizarInventario(

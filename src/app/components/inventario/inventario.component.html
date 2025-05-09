@@ -27,6 +27,53 @@
         </mat-form-field>
       </div>
 
+      <!-- Añadir después del buscador y antes de la tabla -->
+      <div class="flex flex-col md:flex-row justify-between items-center mb-4">
+        <div class="mb-4 md:mb-0 flex items-center">
+          <span class="text-sm font-medium text-gray-700 mr-2">Ordenar por demanda:</span>
+          <div class="inline-flex rounded-md shadow-sm">
+            <ng-container *ngFor="let metrica of metricasDemanda; let i = index">
+              <button 
+                type="button"
+                [ngClass]="[
+                  'px-3 py-1.5 text-xs font-medium',
+                  metricaSeleccionada === metrica.valor ? 
+                    'bg-blue-600 text-white' : 
+                    'bg-white text-gray-700 hover:bg-gray-50',
+                  i === 0 ? 'rounded-l-md' : '',
+                  i === metricasDemanda.length - 1 ? 'rounded-r-md' : '',
+                  'border border-gray-300'
+                ]"
+                (click)="cambiarMetricaOrdenamiento(metrica.valor)"
+              >
+                {{metrica.nombre}}
+              </button>
+            </ng-container>
+          </div>
+        </div>
+        
+        <!-- Leyenda de métricas -->
+        <div *ngIf="metricaSeleccionada !== 'normal'" class="text-xs text-gray-500">
+          <span [ngSwitch]="metricaSeleccionada">
+            <ng-container *ngSwitchCase="'rotacionInventario'">
+              Ordenado por índice de rotación (salidas/stock promedio)
+            </ng-container>
+            <ng-container *ngSwitchCase="'totalSalidas'">
+              Ordenado por número total de salidas
+            </ng-container>
+            <ng-container *ngSwitchCase="'cantidadTotalRetirada'">
+              Ordenado por cantidad total retirada
+            </ng-container>
+            <ng-container *ngSwitchCase="'frecuenciaMensual'">
+              Ordenado por frecuencia mensual de salidas
+            </ng-container>
+            <ng-container *ngSwitchCase="'ultimaSalida'">
+              Ordenado por fecha de última salida
+            </ng-container>
+          </span>
+        </div>
+      </div>
+
       <!-- Tabla -->
       <div class="overflow-x-auto rounded-lg border border-gray-100">
         <table mat-table [dataSource]="dataSource" matSort class="w-full">
@@ -119,6 +166,39 @@
           <ng-container matColumnDef="stockMinimo">
             <th mat-header-cell *matHeaderCellDef mat-sort-header class="bg-gray-50 py-4"> Stock Mínimo </th>
             <td mat-cell *matCellDef="let row" class="py-3 text-right"> {{row.stockMinimo}} </td>
+          </ng-container>
+
+          <!-- Añadir en la tabla -->
+          <ng-container matColumnDef="metricaDemanda">
+            <th mat-header-cell *matHeaderCellDef class="bg-gray-50 py-4">
+              <span [ngSwitch]="metricaSeleccionada">
+                <ng-container *ngSwitchCase="'rotacionInventario'">Rotación</ng-container>
+                <ng-container *ngSwitchCase="'totalSalidas'">Total Salidas</ng-container>
+                <ng-container *ngSwitchCase="'cantidadTotalRetirada'">Cantidad Retirada</ng-container>
+                <ng-container *ngSwitchCase="'frecuenciaMensual'">Frec. Mensual</ng-container>
+                <ng-container *ngSwitchCase="'ultimaSalida'">Última Salida</ng-container>
+              </span>
+            </th>
+            <td mat-cell *matCellDef="let row" class="py-3 font-medium">
+              <span *ngIf="row.metricasDemanda" [ngSwitch]="metricaSeleccionada">
+                <ng-container *ngSwitchCase="'rotacionInventario'">
+                  {{row.metricasDemanda.rotacionInventario | number:'1.2-2'}}
+                </ng-container>
+                <ng-container *ngSwitchCase="'totalSalidas'">
+                  {{row.metricasDemanda.totalSalidas || 0}}
+                </ng-container>
+                <ng-container *ngSwitchCase="'cantidadTotalRetirada'">
+                  {{row.metricasDemanda.cantidadTotalRetirada || 0}}
+                </ng-container>
+                <ng-container *ngSwitchCase="'frecuenciaMensual'">
+                  {{row.metricasDemanda.frecuenciaMensual | number:'1.2-2'}} /mes
+                </ng-container>
+                <ng-container *ngSwitchCase="'ultimaSalida'">
+                  {{row.metricasDemanda.ultimaSalida | date:'dd/MM/yyyy'}}
+                </ng-container>
+              </span>
+              <span *ngIf="!row.metricasDemanda">-</span>
+            </td>
           </ng-container>
 
           <tr mat-header-row *matHeaderRowDef="displayedColumns" class="bg-gray-50"></tr>

@@ -228,4 +228,15 @@ export class InventarioService {
 
     return this.http.get<PaginatedResults<Salida>>(`${this.apiUrl}/${id}/salidas`, { params });
   }
+
+  // Añadir método para obtener inventario por demanda
+  getInventarioPorDemanda(page: number = 0, pageSize: number = 25, metrica: string = 'rotacionInventario', search: string = ''): Observable<any> {
+    const params = new HttpParams()
+      .set('page', page.toString())
+      .set('pageSize', pageSize.toString())
+      .set('metrica', metrica)
+      .set('search', search);
+
+    return this.http.get<any>(`${this.apiUrl}/demanda`, { params });
+  }
 }

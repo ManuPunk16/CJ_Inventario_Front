@@ -15,9 +15,6 @@ import { InventarioService } from '../../services/inventario.service';
 import { Inventario, AreaTipo, Salida } from '../../core/models/inventario.model';
 import { AuthService } from '../../core/services/auth.service';
 import { 
-  AREAS, 
-  TIPO_MATERIAL, 
-  UNIDAD_MEDIDA, 
   getAreaValues, 
   getTipoMaterialValues, 
   getUnidadMedidaValues 
@@ -46,16 +43,25 @@ import { takeUntil } from 'rxjs/operators';
   styleUrls: ['./inventario.component.scss']
 })
 export class InventarioComponent implements OnInit, OnDestroy {
-  displayedColumns: string[] = [
-    'acciones',
-    'codigoUbicacion',
-    'tipoMaterial',
-    'nombre',
-    'cantidad',
-    'unidadMedida',
-    'ubicacion',
-    'stockMinimo'
-  ];
+  get displayedColumns(): string[] {
+    const columnas = [
+      'acciones',
+      'codigoUbicacion',
+      'tipoMaterial',
+      'nombre',
+      'cantidad',
+      'unidadMedida',
+      'ubicacion'
+    ];
+    
+    // Añadir columna de métrica si está seleccionada una métrica de demanda
+    if (this.metricaSeleccionada !== 'normal') {
+      columnas.splice(4, 0, 'metricaDemanda'); // Insertar después del nombre
+    }
+    
+    columnas.push('stockMinimo');
+    return columnas;
+  }
   dataSource = new MatTableDataSource<Inventario>();
   isLoading = true;
   errorMessage = '';
@@ -74,6 +80,17 @@ export class InventarioComponent implements OnInit, OnDestroy {
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
+
+  // Añadir propiedades para manejo de ordenamiento por demanda
+  metricasDemanda = [
+    { valor: 'normal', nombre: 'Ordenamiento normal' },
+    { valor: 'rotacionInventario', nombre: 'Rotación de inventario' },
+    { valor: 'totalSalidas', nombre: 'Número de salidas' },
+    { valor: 'cantidadTotalRetirada', nombre: 'Cantidad total retirada' },
+    { valor: 'frecuenciaMensual', nombre: 'Frecuencia mensual' },
+    { valor: 'ultimaSalida', nombre: 'Última salida' }
+  ];
+  metricaSeleccionada = 'normal';
 
   constructor(
     private inventarioService: InventarioService,
@@ -110,20 +127,51 @@ export class InventarioComponent implements OnInit, OnDestroy {
 
   cargarInventario(page: number = 0, pageSize: number = this.pageSize): void {
     this.isLoading = true;
-    this.inventarioService.getInventario(page, pageSize).subscribe({
-      next: (response) => {
-        if (response.status === 'success') {
-          this.dataSource.data = response.items;
-          this.totalItems = response.totalItems || 0;
+    
+    // Si es ordenamiento normal, usar el endpoint existente
+    if (this.metricaSeleccionada === 'normal') {
+      this.inventarioService.getInventario(page, pageSize).subscribe({
+        next: (response) => {
+          if (response.status === 'success') {
+            this.dataSource.data = response.items;
+            this.totalItems = response.totalItems || 0;
+            this.isLoading = false;
+          }
+        },
+        error: (error) => {
+          this.errorMessage = 'Error al cargar el inventario';
           this.isLoading = false;
+          console.error('Error:', error);
         }
-      },
-      error: (error) => {
-        this.errorMessage = 'Error al cargar el inventario';
-        this.isLoading = false;
-        console.error('Error:', error);
+      });
+    } else {
+      // Usar el nuevo endpoint de demanda
+      this.inventarioService.getInventarioPorDemanda(page, pageSize, this.metricaSeleccionada).subscribe({
+        next: (response) => {
+          if (response.status === 'success') {
+            this.dataSource.data = response.items;
+            this.totalItems = response.totalItems || 0;
+            this.isLoading = false;
+          }
+        },
+        error: (error) => {
+          this.errorMessage = 'Error al cargar el inventario';
+          this.isLoading = false;
+          console.error('Error:', error);
+        }
+      });
+    }
+  }
+
+  cambiarMetricaOrdenamiento(metrica: string): void {
+    if (this.metricaSeleccionada !== metrica) {
+      this.metricaSeleccionada = metrica;
+      this.currentPage = 0;
+      if (this.paginator) {
+        this.paginator.pageIndex = 0;
       }
-    });
+      this.cargarInventario();
+    }
   }
 
   onPageChange(event: any): void {

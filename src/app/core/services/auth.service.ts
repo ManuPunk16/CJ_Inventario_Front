@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpInterceptor, HttpRequest, HttpHandler, HttpEvent, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { Observable, BehaviorSubject, throwError } from 'rxjs';
-import { tap, catchError, map, switchMap, filter, take } from 'rxjs/operators';
+import { tap, catchError, map, switchMap, filter, take, finalize } from 'rxjs/operators';
 import { environment } from '../../../environments/environments';
 import {
   LoginRequest,
@@ -46,10 +46,45 @@ export class AuthService {
   }
 
   logout(): void {
-    this.http.post(`${this.apiUrl}/logout`, {}).subscribe({
-      next: () => this.handleLogout(),
-      error: () => this.handleLogout()
-    });
+    // Verificar si ya hay un proceso de logout en marcha
+    if (localStorage.getItem('logout_in_progress')) {
+      console.log('Proceso de logout ya en curso');
+      return;
+    }
+    
+    // Detener el timer de refresh
+    this.stopRefreshTokenTimer();
+    
+    // Establecer bandera de logout en progreso
+    localStorage.setItem('logout_in_progress', 'true');
+    
+    // Obtener token actual
+    const token = this.getAccessToken();
+    
+    // Si hay token, intentar logout en el servidor
+    if (token) {
+      this.http.post(`${this.apiUrl}/logout`, {})
+        .pipe(
+          finalize(() => {
+            this.clearTokensAndRedirect();
+            // Eliminar bandera después de un tiempo
+            setTimeout(() => {
+              localStorage.removeItem('logout_in_progress');
+            }, 2000);
+          })
+        )
+        .subscribe({
+          next: () => console.log('Logout exitoso en el servidor'),
+          error: (error) => console.warn('Error en logout del servidor:', error)
+        });
+    } else {
+      // Si no hay token, solo limpiar datos locales
+      this.clearTokensAndRedirect();
+      // Eliminar bandera después de un tiempo
+      setTimeout(() => {
+        localStorage.removeItem('logout_in_progress');
+      }, 2000);
+    }
   }
 
   getProfile(): Observable<User> {
@@ -59,14 +94,40 @@ export class AuthService {
   }
 
   refreshAccessToken(): Observable<RefreshTokenResponse> {
-    return this.http.post<RefreshTokenResponse>(`${this.apiUrl}/refresh-token`, { refreshToken: this.refreshToken }).pipe(
+    // Si ya hay un logout en progreso, no intentar refresh
+    if (localStorage.getItem('logout_in_progress')) {
+      return throwError(() => new Error('Logout en progreso, refresh token cancelado'));
+    }
+    
+    const refreshToken = this.refreshToken || localStorage.getItem('refreshToken');
+    
+    if (!refreshToken) {
+      console.log('No hay refresh token para renovar la sesión');
+      // Importante: Evitar ciclos usando una bandera
+      if (!localStorage.getItem('logout_in_progress')) {
+        this.clearTokensAndRedirect();
+      }
+      return throwError(() => new Error('No refresh token'));
+    }
+    
+    return this.http.post<RefreshTokenResponse>(`${this.apiUrl}/refresh-token`, { refreshToken }).pipe(
       tap(response => {
         this.accessToken = response.accessToken;
         localStorage.setItem('accessToken', this.accessToken);
         this.startRefreshTokenTimer();
       }),
       catchError(error => {
-        this.handleLogout();
+        console.error('Error en refresh token:', error);
+        
+        // Importante: Si el refresh token falló por expiración, hacer logout limpio
+        if (error.error?.code === 'REFRESH_TOKEN_EXPIRED' || 
+            error.error?.code === 'INVALID_REFRESH_TOKEN') {
+          if (!localStorage.getItem('logout_in_progress')) {
+            console.log('Refresh token expirado o inválido, haciendo logout');
+            this.clearTokensAndRedirect();
+          }
+        }
+        
         return throwError(() => error);
       })
     );
@@ -165,6 +226,51 @@ export class AuthService {
     if (this.refreshTokenTimeout) {
       clearTimeout(this.refreshTokenTimeout);
     }
+  }
+
+  private clearTokens(): void {
+    this.accessToken = '';
+    this.refreshToken = '';
+    this.userSubject.next(null);
+
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('user');
+  }
+
+  refreshAuthToken() {
+    const refreshToken = this.getRefreshToken();
+    
+    // Si no hay refresh token, forzar logout
+    if (!refreshToken) {
+      console.log('No hay refresh token disponible');
+      this.logout();
+      return throwError(() => new Error('No refresh token'));
+    }
+    
+    // Si hay un token, intentar refresh
+    return this.http.post<any>('/api/auth/refresh-token', { refreshToken });
+  }
+
+  private getRefreshToken(): string {
+    return this.refreshToken;
+  }
+
+  // Método para evitar duplicidad y asegurar limpieza consistente
+  private clearTokensAndRedirect(): void {
+    // Limpiar datos de sesión
+    this.stopRefreshTokenTimer();
+    this.accessToken = '';
+    this.refreshToken = '';
+    this.userSubject.next(null);
+    
+    // Limpiar localStorage
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('user');
+    
+    // Redireccionar al login
+    this.router.navigate(['/login']);
   }
 }
 

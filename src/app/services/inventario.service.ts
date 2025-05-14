@@ -30,10 +30,11 @@ export class InventarioService {
 
   constructor(private http: HttpClient, private authService: AuthService) {}
 
-  getInventario(page: number = 0, pageSize: number = 10): Observable<InventariosResponse> {
+  getInventario(page: number = 0, pageSize: number = 10, search: string = ''): Observable<InventariosResponse> {
     const params = new HttpParams()
       .set('page', page.toString())
-      .set('pageSize', pageSize.toString());
+      .set('pageSize', pageSize.toString())
+      .set('search', search);;
 
     const token = localStorage.getItem('token');
     const headers = new HttpHeaders({

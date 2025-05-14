@@ -21,7 +21,7 @@ import {
 } from '../../utils/enums';
 import Swal from 'sweetalert2';
 import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-inventario',
@@ -92,6 +92,9 @@ export class InventarioComponent implements OnInit, OnDestroy {
   ];
   metricaSeleccionada = 'normal';
 
+  searchTerm: string = '';
+  searchTerms = new Subject<string>();
+
   constructor(
     private inventarioService: InventarioService,
     private router: Router,
@@ -107,6 +110,20 @@ export class InventarioComponent implements OnInit, OnDestroy {
       .subscribe(user => {
         this.currentUser = user;
       });
+      
+    // Configurar el observable para la búsqueda con debounce
+    this.searchTerms.pipe(
+      takeUntil(this.destroy$),
+      debounceTime(400), // Esperar 400ms después de que el usuario deje de escribir
+      distinctUntilChanged() // Ignorar si el término de búsqueda no cambió
+    ).subscribe(term => {
+      this.searchTerm = term;
+      this.currentPage = 0; // Reiniciar a la primera página al buscar
+      if (this.paginator) {
+        this.paginator.pageIndex = 0;
+      }
+      this.cargarInventario();
+    });
   }
 
   ngOnDestroy(): void {
@@ -125,12 +142,12 @@ export class InventarioComponent implements OnInit, OnDestroy {
     this.dataSource.sort = this.sort;
   }
 
-  cargarInventario(page: number = 0, pageSize: number = this.pageSize): void {
+  cargarInventario(page: number = this.currentPage, pageSize: number = this.pageSize): void {
     this.isLoading = true;
     
     // Si es ordenamiento normal, usar el endpoint existente
     if (this.metricaSeleccionada === 'normal') {
-      this.inventarioService.getInventario(page, pageSize).subscribe({
+      this.inventarioService.getInventario(page, pageSize, this.searchTerm).subscribe({
         next: (response) => {
           if (response.status === 'success') {
             this.dataSource.data = response.items;
@@ -146,7 +163,7 @@ export class InventarioComponent implements OnInit, OnDestroy {
       });
     } else {
       // Usar el nuevo endpoint de demanda
-      this.inventarioService.getInventarioPorDemanda(page, pageSize, this.metricaSeleccionada).subscribe({
+      this.inventarioService.getInventarioPorDemanda(page, pageSize, this.metricaSeleccionada, this.searchTerm).subscribe({
         next: (response) => {
           if (response.status === 'success') {
             this.dataSource.data = response.items;
@@ -182,11 +199,7 @@ export class InventarioComponent implements OnInit, OnDestroy {
 
   aplicarFiltro(event: Event) {
     const filterValue = (event.target as HTMLInputElement).value;
-    this.dataSource.filter = filterValue.trim().toLowerCase();
-
-    if (this.dataSource.paginator) {
-      this.dataSource.paginator.firstPage();
-    }
+    this.searchTerms.next(filterValue.trim());
   }
 
   verDetalles(item: Inventario): void {
